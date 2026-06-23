@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM — Salons d'Honneur Beth Menahem</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+<link rel="stylesheet" href="/crm/styles.css">
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="auth-screen">
+  <div class="login-card">
+    <div class="login-logo"><div class="login-logo-icon">🏛️</div>
+      <h1>CRM Beth Menahem</h1><p>Espace de gestion — Salons d'Honneur</p></div>
+    <form id="loginForm">
+      <div class="login-field"><label>Identifiant</label><input type="text" id="loginUser" autocomplete="username" placeholder="admin"></div>
+      <div class="login-field"><label>Mot de passe</label><input type="password" id="loginPass" autocomplete="current-password" placeholder="••••••••"></div>
+      <button type="submit" class="btn-login">Se connecter</button>
+      <div class="login-error" id="loginError"></div>
+    </form>
+  </div>
+</div>
+
+<!-- FORCE PASSWORD -->
+<div id="forcePwScreen" class="auth-screen" style="display:none">
+  <div class="login-card">
+    <div class="login-logo"><div class="login-logo-icon">🔐</div>
+      <h1>Créer votre mot de passe</h1><p>Définissez un mot de passe personnel.</p></div>
+    <form id="forcePwForm">
+      <div class="login-field"><label>Nouveau mot de passe</label><input type="password" id="forcePwNew" placeholder="Minimum 6 caractères"></div>
+      <div class="login-field"><label>Confirmer</label><input type="password" id="forcePwConfirm" placeholder="••••••••"></div>
+      <button type="submit" class="btn-login">Valider</button>
+      <div class="login-error" id="forcePwError"></div>
+    </form>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="sidebar-logo-inner">
+      <div class="sidebar-logo-icon">✨</div>
+      <div class="sidebar-logo-text"><div class="name">Beth Menahem</div><div class="sub">CRM — Salons d'Honneur</div></div>
+    </div></div>
+    <nav class="sidebar-nav" id="sidebarNav">
+      <div class="sidebar-section">Pilotage</div>
+      <button class="nav-item active" data-page="dashboard"><span class="icon">📊</span>Tableau de bord</button>
+      <button class="nav-item" data-page="calendar"><span class="icon">📅</span>Calendrier</button>
+      <button class="nav-item" data-page="reservations"><span class="icon">📋</span>Réservations</button>
+      <div class="sidebar-section" data-roles="admin,administratif">Finances</div>
+      <button class="nav-item" data-page="payments" data-roles="admin,administratif"><span class="icon">💰</span>Paiements & relances</button>
+      <div class="sidebar-section" data-roles="admin">Administration</div>
+      <button class="nav-item" data-page="config" data-roles="admin"><span class="icon">⚙️</span>Configuration</button>
+      <button class="nav-item" data-page="users" data-roles="admin"><span class="icon">👥</span>Utilisateurs</button>
+      <button class="nav-item" data-page="account"><span class="icon">🔑</span>Mon compte</button>
+      <a href="/" target="_blank" class="nav-item"><span class="icon">🌐</span>Voir le site</a>
+    </nav>
+    <div class="sidebar-footer"><div class="user-info">
+      <div class="user-avatar" id="userAvatar">A</div>
+      <div><div class="user-name" id="userName">Admin</div><div class="user-role" id="userRoleLabel">Administrateur</div></div>
+      <button class="btn-logout" id="btnLogout" title="Déconnexion">⏻</button>
+    </div></div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbarTitle">Tableau de bord</div>
+      <div class="topbar-actions">
+        <span class="topbar-badge" id="pendingBadge"></span>
+        <button class="btn btn-navy" data-roles="admin,commercial,administratif" onclick="Res.openNew()">+ Nouvelle réservation</button>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-grid" id="statsGrid"></div>
+        <div class="grid-2">
+          <div class="card"><div class="card-head"><span class="card-title">🗓️ Prochains événements</span></div>
+            <div style="padding:18px" id="nextEvents"></div></div>
+          <div class="card"><div class="card-head"><span class="card-title">⚠️ Paiements en retard</span></div>
+            <div style="padding:18px" id="retardsList"></div></div>
+        </div>
+      </div>
+
+      <!-- CALENDAR -->
+      <div class="page" id="page-calendar">
+        <div class="card">
+          <div class="card-head"><span class="card-title">📅 Planning des salles</span>
+            <div class="card-actions"><select class="filter-select" id="calFilterSpace" onchange="Cal.render()"><option value="">Toutes les salles</option></select>
+            <span id="calLegend" class="cal-legend"></span></div></div>
+          <div style="padding:18px"><div id="calendar"></div></div>
+        </div>
+      </div>
+
+      <!-- RESERVATIONS -->
+      <div class="page" id="page-reservations">
+        <div class="card">
+          <div class="card-head"><span class="card-title">📋 Réservations</span>
+            <div class="card-actions">
+              <input type="text" class="search-input" id="searchInput" placeholder="🔍 Rechercher…" oninput="Res.load()">
+              <select class="filter-select" id="filterStatut" onchange="Res.load()"><option value="">Tous statuts</option></select>
+              <select class="filter-select" id="filterSpace" onchange="Res.load()"><option value="">Toutes salles</option></select>
+              <button class="btn btn-ghost btn-sm" onclick="Res.clearFilters()">✕</button>
+            </div></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Réf.</th><th>Client</th><th>Événement</th><th>Date</th><th>Salle</th><th>Total</th><th>Encaissé</th><th>Statut</th><th></th></tr></thead>
+            <tbody id="resBody"><tr><td colspan="9"><div class="empty-state">Chargement…</div></td></tr></tbody>
+          </table></div>
+          <div class="pagination" id="resPagination"></div>
+        </div>
+      </div>
+
+      <!-- PAYMENTS -->
+      <div class="page" id="page-payments">
+        <div class="card">
+          <div class="card-head"><span class="card-title">💰 Suivi des paiements</span>
+            <div class="card-actions"><select class="filter-select" id="payFilter" onchange="Pay.load()">
+              <option value="">Tous</option><option value="attendu">En attente</option><option value="retard">En retard</option><option value="paye">Payés</option></select>
+              <button class="btn btn-gold btn-sm" onclick="Pay.relanceAll()">📨 Relancer les retards</button></div></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Réf.</th><th>Client</th><th>Type</th><th>Montant</th><th>Échéance</th><th>Statut</th><th>Moyen</th><th></th></tr></thead>
+            <tbody id="payBody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- CONFIG -->
+      <div class="page" id="page-config"><div id="configRoot"></div></div>
+
+      <!-- USERS -->
+      <div class="page" id="page-users">
+        <div class="card">
+          <div class="card-head"><span class="card-title">👥 Utilisateurs</span>
+            <div class="card-actions"><button class="btn btn-navy" onclick="Users.openNew()">+ Nouvel utilisateur</button></div></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Email</th><th>Nom</th><th>Rôle</th><th>Statut</th><th>Créé le</th><th></th></tr></thead>
+            <tbody id="usersBody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- ACCOUNT -->
+      <div class="page" id="page-account">
+        <div class="card" style="max-width:460px">
+          <div class="card-head"><span class="card-title">🔑 Changer mon mot de passe</span></div>
+          <div style="padding:22px;display:flex;flex-direction:column;gap:14px">
+            <div class="form-field"><label>Mot de passe actuel</label><input type="password" id="pwCurrent"></div>
+            <div class="form-field"><label>Nouveau mot de passe</label><input type="password" id="pwNew"></div>
+            <div class="form-field"><label>Confirmer</label><input type="password" id="pwConfirm"></div>
+            <button class="btn btn-navy" onclick="changePassword()" style="align-self:flex-start">Enregistrer</button>
+            <div id="pwMsg" style="font-size:13px;display:none"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RÉSERVATION -->
+<div class="modal-overlay" id="modalReservation"><div class="modal modal-lg">
+  <div class="modal-head"><h3 id="resModalTitle">Réservation</h3><button class="modal-close" onclick="UI.closeModal('modalReservation')">×</button></div>
+  <div class="res-tabs" id="resTabs">
+    <button class="res-tab active" data-tab="client">Client & événement</button>
+    <button class="res-tab" data-tab="tarif">Tarif & devis</button>
+    <button class="res-tab" data-tab="paiements">Paiements</button>
+    <button class="res-tab" data-tab="documents">Documents</button>
+    <button class="res-tab" data-tab="logistique">Logistique</button>
+    <button class="res-tab" data-tab="historique">Historique</button>
+  </div>
+  <div class="modal-body" id="resModalBody"><input type="hidden" id="resId"></div>
+  <div class="modal-foot" id="resModalFoot"></div>
+</div></div>
+
+<!-- MODAL GÉNÉRIQUE (config / user / paiement) -->
+<div class="modal-overlay" id="modalGeneric"><div class="modal">
+  <div class="modal-head"><h3 id="genTitle"></h3><button class="modal-close" onclick="UI.closeModal('modalGeneric')">×</button></div>
+  <div class="modal-body" id="genBody"></div>
+  <div class="modal-foot" id="genFoot"></div>
+</div></div>
+
+<!-- CONFIRM -->
+<div class="modal-overlay" id="confirmDialog"><div class="modal modal-sm">
+  <div class="modal-head"><h3 id="confirmTitle">Confirmer</h3><button class="modal-close" onclick="UI.closeModal('confirmDialog')">×</button></div>
+  <div class="modal-body"><p id="confirmText" style="font-size:14px;line-height:1.6"></p></div>
+  <div class="modal-foot"><button class="btn btn-ghost" onclick="UI.closeModal('confirmDialog')">Annuler</button>
+    <button class="btn btn-red" id="confirmOkBtn">Confirmer</button></div>
+</div></div>
+
+<div id="toast"></div>
+<script src="/crm/app.js"></script>
+<script src="/crm/app2.js"></script>
+</body>
+</html>

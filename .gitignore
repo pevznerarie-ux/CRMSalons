@@ -1,0 +1,29 @@
+# Dépendances
+node_modules/
+
+# Secrets
+.env
+
+# Base de données locale (régénérée par le seed)
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+# Fichiers uploadés / documents générés
+uploads/*
+!uploads/.gitkeep
+
+# Ancienne version (non déployée)
+legacy/
+
+# Ancienne base JSON
+data/db.json
+
+# Outils / skills locaux (non nécessaires au déploiement)
+.agents/
+.claude/skills/
+
+# Divers
+*.log
+.DS_Store
+Thumbs.db

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notre Brochure — Salons d'Honneur Beth Menahem</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --gold: #C9A84C; --navy: #0d1b2a; --cream: #F8F4EC; }
+    body { font-family: 'Inter', sans-serif; background: var(--cream); color: #2c2c2c; }
+
+    /* NAV */
+    nav {
+      background: var(--navy); padding: 0 5%; height: 68px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid rgba(201,168,76,.2);
+    }
+    .nav-logo { font-family: 'Playfair Display',serif; font-size: 1.1rem; font-weight: 700; color: var(--gold); text-decoration: none; }
+    .nav-logo span { display: block; font-size: .6rem; font-family: 'Inter',sans-serif; letter-spacing: 3px; color: rgba(255,255,255,.4); text-transform: uppercase; }
+    .nav-back { color: rgba(255,255,255,.6); text-decoration: none; font-size: .85rem; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: color .2s; }
+    .nav-back:hover { color: var(--gold); }
+
+    /* HEADER */
+    .page-header {
+      background: linear-gradient(135deg, var(--navy) 0%, #1e3050 100%);
+      padding: 4rem 5% 3.5rem; text-align: center;
+    }
+    .page-header .eyebrow { font-size: .68rem; font-weight: 600; letter-spacing: 4px; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; }
+    .page-header h1 { font-family: 'Playfair Display',serif; font-size: clamp(2rem,5vw,3.5rem); font-weight: 700; color: #fff; line-height: 1.1; }
+    .page-header h1 em { color: var(--gold); font-style: italic; }
+    .page-header p { color: rgba(255,255,255,.55); font-size: .95rem; margin-top: .75rem; font-weight: 300; }
+    .page-header .cta-wrap { margin-top: 2rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn-gold { background: var(--gold); color: var(--navy); padding: .75rem 2rem; border-radius: 40px; font-size: .9rem; font-weight: 700; text-decoration: none; transition: all .2s; }
+    .btn-gold:hover { background: #e2c97e; transform: translateY(-1px); }
+    .btn-outline { border: 1px solid rgba(201,168,76,.5); color: var(--gold); padding: .75rem 2rem; border-radius: 40px; font-size: .9rem; font-weight: 500; text-decoration: none; transition: all .2s; }
+    .btn-outline:hover { background: rgba(201,168,76,.1); }
+
+    /* GALLERY */
+    .gallery { max-width: 1000px; margin: 0 auto; padding: 4rem 5%; display: flex; flex-direction: column; gap: 2rem; }
+
+    .gal-section { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.07); border: 1px solid #ece8e0; }
+    .gal-img { width: 100%; display: block; cursor: zoom-in; transition: transform .3s; }
+    .gal-img:hover { transform: scale(1.01); }
+    .gal-caption { padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f0ece4; }
+    .gal-caption-text { font-size: .82rem; color: #888; font-style: italic; }
+    .gal-num { font-size: .72rem; font-weight: 700; color: var(--gold); letter-spacing: 1px; }
+
+    /* LIGHTBOX */
+    .lightbox { display: none; position: fixed; inset: 0; background: rgba(5,12,22,.95); z-index: 9999; align-items: center; justify-content: center; padding: 1rem; }
+    .lightbox.open { display: flex; }
+    .lightbox img { max-width: 100%; max-height: 90vh; border-radius: 4px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+    .lightbox-close { position: absolute; top: 1.5rem; right: 1.5rem; color: rgba(255,255,255,.7); font-size: 2rem; cursor: pointer; background: none; border: none; line-height: 1; transition: color .2s; }
+    .lightbox-close:hover { color: var(--gold); }
+    .lightbox-prev, .lightbox-next { position: absolute; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,.6); font-size: 2.5rem; cursor: pointer; background: rgba(255,255,255,.08); border: none; width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all .2s; }
+    .lightbox-prev:hover, .lightbox-next:hover { background: rgba(201,168,76,.2); color: var(--gold); }
+    .lightbox-prev { left: 1.5rem; }
+    .lightbox-next { right: 1.5rem; }
+    .lightbox-counter { position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,.45); font-size: .8rem; letter-spacing: 1px; }
+
+    /* FOOTER */
+    footer { background: var(--navy); padding: 2rem 5%; text-align: center; border-top: 1px solid rgba(201,168,76,.1); }
+    footer p { color: rgba(255,255,255,.35); font-size: .78rem; }
+    footer a { color: var(--gold); text-decoration: none; }
+
+    @media (max-width:600px) {
+      .lightbox-prev { left: .5rem; } .lightbox-next { right: .5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">Salons d'Honneur <span>Beth Menahem · Levallois</span></a>
+  <a href="/" class="nav-back">← Retour au site</a>
+</nav>
+
+<div class="page-header">
+  <div class="eyebrow">Salons d'Honneur · Levallois</div>
+  <h1>Notre <em>Brochure</em></h1>
+  <p>Découvrez nos espaces, équipements et options en images</p>
+  <div class="cta-wrap">
+    <a href="#devis" onclick="window.location='/#devis'" class="btn-gold">Demander un devis</a>
+    <a href="tel:0749549790" class="btn-outline">📞 07 49 54 97 90</a>
+  </div>
+</div>
+
+<div class="gallery" id="gallery">
+
+  <div class="gal-section">
+    <img class="gal-img" src="/images/hero.jpg" alt="Salons d'Honneur — configuration banquet" onclick="openLightbox(0)">
+    <div class="gal-caption">
+      <span class="gal-caption-text">Salons d'Honneur — configuration banquet, tables rondes habillées</span>
+      <span class="gal-num">01 / 11</span>
+    </div>
+  </div>
+
+  <div class="gal-section">
+    <img class="gal-img" src="/images/tables-salle.jpg" alt="Salons d'Honneur — jour d'inauguration" onclick="openLightbox(1)">
+    <div class="gal-caption">
+      <span class="gal-caption-text">Salons d'Honneur — jour d'inauguration, salle comble</span>
+      <span class="gal-num">02 / 11</span>
+    </div>
+  </div>
+
+  <div class="gal-section">
+    <img class="gal-img" src="/images/salle-honneur.jpg" alt="Salons d'Honneur — éclairage scénique bleu" onclick="openLightbox(2)">
+    <div class="gal-caption">
+      <span class="gal-caption-text">Salons d'Honneur — vue générale avec éclairage scénique</span>
+      <span class="gal-num">03 / 11</span>
+    </div>
+  </div>
+
+  <div class="gal-section">
+    <img class="gal-img" src="/images/piste-danse.jpg" alt="Scène & piste de danse — DJ setup" onclick="openLightbox(3)">
+    <div class="gal-caption">
+      <span class="gal-caption-text">Scène avec setup DJ et projections lumineuses sur la piste de danse</span>
+      <span class="gal-num">04 / 11</span>
+    </div>
+  </div>
+
+  <div class="gal-section">
+    <img class="gal-img" src="/images/scene-lumiere.jpg" alt="Vue plongeante — éclairage scénique" onclick="openLightbox(4)">
+    <div class="gal-caption">
+      <span class="gal-caption-text">Vue plongeante depuis la mezzanine — éclairage ambiance et piste</span>
+      <span class="gal-num">05 / 11</span>
+    </div>
+  </div>
+
+  <div class="gal-section">
+    <img class="gal-img" src="/images/salle-bleue.jpg" alt="Salons — configuration séminaire avec éclairage bleu" onclick="openLightbox(5)">
+    <div class="gal-caption">
+      <span class="gal-caption-text">Configuration séminaire / conférence — éclairage scénique</span>
+      <span class="gal-num">06 / 11</span>
+    </div>
+  </div>
+
+  <div class="gal-section">
+    <img class="gal-img" src="/images/salle-sol.jpg" alt="Piste de danse — projections lumineuses au sol" onclick="openLightbox(6)">
+    <div class="gal-caption">
+      <span class="gal-caption-text">Piste de danse — projections lumineuses au sol et scène de spectacle</span>
+      <span class="gal-num">07 / 11</span>
+    </div>
+  </div>
+
+  <div class="gal-section">
+    <img class="gal-img" src="/images/scene-vide.jpg" alt="Scène — LEDs et éclairage dramatique" onclick="openLightbox(7)">
+    <div class="gal-caption">
+      <span class="gal-caption-text">Scène principale — colonnes LED et éclairage dramatique</span>
+      <span class="gal-num">08 / 11</span>
+    </div>
+  </div>
+
+  <div class="gal-section">
+    <img class="gal-img" src="/images/entree.jpg" alt="Entrée du centre culturel Beth Menahem" onclick="openLightbox(8)">
+    <div class="gal-caption">
+      <span class="gal-caption-text">Entrée du centre culturel Beth Menahem — Levallois</span>
+      <span class="gal-num">09 / 11</span>
+    </div>
+  </div>
+
+  <div class="gal-section">
+    <img class="gal-img" src="/images/conference-buffet.jpg" alt="Buffet d'accueil — traiteur" onclick="openLightbox(9)">
+    <div class="gal-caption">
+      <span class="gal-caption-text">Buffet d'accueil — espace traiteur et office de service</span>
+      <span class="gal-num">10 / 11</span>
+    </div>
+  </div>
+
+  <div class="gal-section">
+    <img class="gal-img" src="/images/mezzanine.jpg" alt="Mezzanine 120 m² — vue plongeante sur les salons" onclick="openLightbox(10)">
+    <div class="gal-caption">
+      <span class="gal-caption-text">Mezzanine 120 m² — vue plongeante sur les Salons d'Honneur</span>
+      <span class="gal-num">11 / 11</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <button class="lightbox-prev" onclick="moveLightbox(-1)">‹</button>
+  <img id="lightboxImg" src="" alt="">
+  <button class="lightbox-next" onclick="moveLightbox(1)">›</button>
+  <div class="lightbox-counter" id="lightboxCounter"></div>
+</div>
+
+<footer>
+  <p>
+    <strong style="color:rgba(255,255,255,.6)">Salons d'Honneur Beth Menahem</strong><br>
+    18, Rue Clément Bayard — 92300 Levallois · <a href="tel:0749549790">07 49 54 97 90</a> · <a href="mailto:Salons@bethmenahem-lis.com">Salons@bethmenahem-lis.com</a>
+  </p>
+</footer>
+
+<script>
+  const images = [
+    { src: '/images/hero.jpg',          alt: 'Salons d\'Honneur — configuration banquet' },
+    { src: '/images/tables-salle.jpg',  alt: 'Salons d\'Honneur — jour d\'inauguration' },
+    { src: '/images/salle-honneur.jpg', alt: 'Salons d\'Honneur — éclairage scénique' },
+    { src: '/images/piste-danse.jpg',   alt: 'Scène & piste de danse — DJ setup' },
+    { src: '/images/scene-lumiere.jpg', alt: 'Vue plongeante — éclairage ambiance' },
+    { src: '/images/salle-bleue.jpg',   alt: 'Configuration séminaire — éclairage bleu' },
+    { src: '/images/salle-sol.jpg',     alt: 'Projections lumineuses sur la piste' },
+    { src: '/images/scene-vide.jpg',    alt: 'Scène principale — colonnes LED' },
+    { src: '/images/entree.jpg',        alt: 'Entrée du centre culturel Beth Menahem' },
+    { src: '/images/conference-buffet.jpg', alt: 'Buffet d\'accueil — traiteur' },
+    { src: '/images/mezzanine.jpg',     alt: 'Mezzanine 120 m² — vue plongeante sur les salons' },
+  ];
+  let current = 0;
+
+  function openLightbox(idx) {
+    current = idx;
+    showLightboxImg();
+    document.getElementById('lightbox').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  function moveLightbox(dir) {
+    current = (current + dir + images.length) % images.length;
+    showLightboxImg();
+  }
+  function showLightboxImg() {
+    document.getElementById('lightboxImg').src = images[current].src;
+    document.getElementById('lightboxImg').alt = images[current].alt;
+    document.getElementById('lightboxCounter').textContent = `${current + 1} / ${images.length}`;
+  }
+
+  // Keyboard nav
+  document.addEventListener('keydown', e => {
+    if (!document.getElementById('lightbox').classList.contains('open')) return;
+    if (e.key === 'ArrowRight') moveLightbox(1);
+    if (e.key === 'ArrowLeft')  moveLightbox(-1);
+    if (e.key === 'Escape')     closeLightbox();
+  });
+  document.getElementById('lightbox').addEventListener('click', e => {
+    if (e.target === document.getElementById('lightbox')) closeLightbox();
+  });
+</script>
+</body>
+</html>
