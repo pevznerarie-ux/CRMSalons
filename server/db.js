@@ -78,6 +78,16 @@ CREATE TABLE IF NOT EXISTS pricing_rules (
   actif          INTEGER NOT NULL DEFAULT 1
 );
 
+-- Remises (étiquettes configurables : AlloJ, Personnel, etc.)
+CREATE TABLE IF NOT EXISTS discounts (
+  id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  libelle TEXT NOT NULL,
+  type    TEXT NOT NULL DEFAULT 'pct',  -- pct | montant
+  valeur  REAL NOT NULL DEFAULT 0,
+  actif   INTEGER NOT NULL DEFAULT 1,
+  ordre   INTEGER DEFAULT 0
+);
+
 -- Options / prestations payantes (configurable)
 CREATE TABLE IF NOT EXISTS options (
   id     INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -187,5 +197,14 @@ CREATE INDEX IF NOT EXISTS idx_pay_res    ON payments(reservation_id);
 CREATE INDEX IF NOT EXISTS idx_pay_statut ON payments(statut);
 CREATE INDEX IF NOT EXISTS idx_doc_res    ON documents(reservation_id);
 `);
+
+// ─── MIGRATIONS LÉGÈRES (ajout de colonnes sur bases existantes) ───────────────
+function ensureColumn(table, column, definition) {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all();
+  if (!cols.some(c => c.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  }
+}
+ensureColumn('reservations', 'remise_label', "TEXT DEFAULT ''");
 
 module.exports = db;

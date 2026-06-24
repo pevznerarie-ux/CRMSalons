@@ -83,6 +83,7 @@ app.get('/api/config', (req, res) => {
     event_types: db.prepare('SELECT * FROM event_types WHERE actif = 1 ORDER BY ordre, nom').all(),
     time_slots:  db.prepare('SELECT * FROM time_slots WHERE actif = 1 ORDER BY ordre, id').all(),
     options:     db.prepare('SELECT * FROM options WHERE actif = 1 ORDER BY ordre, nom').all(),
+    discounts:   db.prepare('SELECT * FROM discounts WHERE actif = 1 ORDER BY ordre, libelle').all(),
     org_nom:     getSetting('org_nom', "Salons d'Honneur Beth Menahem"),
   });
 });
@@ -200,6 +201,7 @@ crudConfig('spaces', 'spaces', ['nom', 'capacite_assise', 'capacite_debout', 'su
 crudConfig('event-types', 'event_types', ['nom', 'actif', 'ordre']);
 crudConfig('time-slots', 'time_slots', ['nom', 'heure_debut', 'heure_fin', 'actif', 'ordre']);
 crudConfig('options', 'options', ['nom', 'prix', 'unite', 'actif', 'ordre']);
+crudConfig('discounts', 'discounts', ['libelle', 'type', 'valeur', 'actif', 'ordre']);
 crudConfig('pricing-rules', 'pricing_rules', ['libelle', 'space_id', 'event_type_id', 'time_slot_id', 'day_type', 'date_debut', 'date_fin', 'prix', 'priorite', 'actif']);
 
 app.get('/api/settings', requireAuth, (req, res) => res.json(getSettings()));
@@ -215,6 +217,7 @@ app.get('/api/config/all', requireAuth, (req, res) => {
     event_types: db.prepare('SELECT * FROM event_types ORDER BY ordre, nom').all(),
     time_slots:  db.prepare('SELECT * FROM time_slots ORDER BY ordre, id').all(),
     options:     db.prepare('SELECT * FROM options ORDER BY ordre, nom').all(),
+    discounts:   db.prepare('SELECT * FROM discounts ORDER BY ordre, libelle').all(),
     pricing_rules: db.prepare('SELECT * FROM pricing_rules ORDER BY priorite DESC, id').all(),
   });
 });
@@ -260,7 +263,7 @@ app.get('/api/availability', requireAuth, (req, res) => {
 
 const RES_FIELDS = ['nom', 'prenom', 'telephone', 'email', 'adresse', 'societe', 'space_id', 'event_type_id',
   'time_slot_id', 'date_evenement', 'date_fin', 'nombre_personnes', 'message_client', 'statut', 'source',
-  'commercial_id', 'prix_base', 'remise_pct', 'remise_montant', 'acompte_montant', 'traiteur', 'decorateur',
+  'commercial_id', 'prix_base', 'remise_pct', 'remise_montant', 'remise_label', 'acompte_montant', 'traiteur', 'decorateur',
   'prestataires', 'logistique', 'notes_internes'];
 
 function recalcTotal(body, existing = {}) {

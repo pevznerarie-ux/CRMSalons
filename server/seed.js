@@ -116,4 +116,17 @@ if (count('pricing_rules') === 0) {
   console.log('✅ Règles tarifaires de base pré-créées (à ajuster dans Paramètres > Tarifs).');
 }
 
+// ─── REMISES (étiquettes) ───────────────────────────────────────────────────────
+if (count('discounts') === 0) {
+  const remises = [
+    ['AlloJ', 'pct', 0],
+    ['Personnel', 'pct', 0],
+    ['Parents école', 'pct', 0],
+    ['Communautaire', 'pct', 0],
+  ];
+  const stmt = db.prepare('INSERT INTO discounts (libelle, type, valeur, ordre) VALUES (?, ?, ?, ?)');
+  remises.forEach((r, i) => stmt.run(...r, i));
+  console.log(`✅ ${remises.length} étiquettes de remise pré-créées (valeurs à définir dans Configuration).`);
+}
+
 console.log('\n🌱 Seed terminé.\n');

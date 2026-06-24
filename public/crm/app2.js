@@ -43,10 +43,18 @@ Object.assign(Res, {
     <!-- TARIF -->
     <div class="tab-pane" data-pane="tarif">
       <div class="form-section-title">💰 Tarification</div>
-      <div class="form-grid cols3">
+      <input type="hidden" id="f-remise_label" value="${UI.esc(r.remise_label||'')}">
+      <div class="form-grid">
+        <div class="form-field span2"><label>🏷️ Étiquette de remise</label>
+          <select id="f-remise_select" onchange="Res.applyRemise()">
+            <option value="">— Aucune remise —</option>
+            ${CONFIG.discounts.map(d=>`<option value="${d.id}" ${r.remise_label===d.libelle?'selected':''}>${UI.esc(d.libelle)} — ${d.type==='pct'?d.valeur+' %':fmtEur(d.valeur)}</option>`).join('')}
+          </select></div>
+      </div>
+      <div class="form-grid cols3" style="margin-top:14px">
         <div class="form-field"><label>Prix de base (€)</label><input type="number" id="f-prix_base" step="0.01" value="${r.prix_base||0}" oninput="Res.recalc()"></div>
-        <div class="form-field"><label>Remise (%)</label><input type="number" id="f-remise_pct" step="0.1" value="${r.remise_pct||0}" oninput="Res.recalc()"></div>
-        <div class="form-field"><label>Remise fixe (€)</label><input type="number" id="f-remise_montant" step="0.01" value="${r.remise_montant||0}" oninput="Res.recalc()"></div>
+        <div class="form-field"><label>Remise (%)</label><input type="number" id="f-remise_pct" step="0.1" value="${r.remise_pct||0}" oninput="document.getElementById('f-remise_select').value='';Res.recalc()"></div>
+        <div class="form-field"><label>Remise fixe (€)</label><input type="number" id="f-remise_montant" step="0.01" value="${r.remise_montant||0}" oninput="document.getElementById('f-remise_select').value='';Res.recalc()"></div>
       </div>
       <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="Res.autoPrice()">🔄 Calculer le prix de base automatiquement</button>
       <div class="form-section-title" style="margin-top:20px">➕ Options</div>
@@ -118,6 +126,13 @@ Object.assign(Res, {
     const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=fmtEur(v);};
     set('rc-sous',sous);set('rc-remise',remise);set('rc-total',total);
   },
+  applyRemise(){
+    const id=+val('f-remise_select');const d=CONFIG.discounts.find(x=>x.id===id);
+    document.getElementById('f-remise_label').value=d?d.libelle:'';
+    if(d){ if(d.type==='pct'){document.getElementById('f-remise_pct').value=d.valeur;document.getElementById('f-remise_montant').value=0;}
+           else{document.getElementById('f-remise_montant').value=d.valeur;document.getElementById('f-remise_pct').value=0;} }
+    this.recalc();
+  },
   async autoPrice(){
     const q=await api('POST','/quote',{space_id:+val('f-space_id')||null,event_type_id:+val('f-event_type_id')||null,time_slot_id:+val('f-time_slot_id')||null,date:val('f-date_evenement')});
     document.getElementById('f-prix_base').value=q.prix_base;
@@ -135,7 +150,7 @@ Object.assign(Res, {
     const o={nom:val('f-nom'),prenom:val('f-prenom'),telephone:val('f-telephone'),email:val('f-email'),societe:val('f-societe'),adresse:val('f-adresse'),
       event_type_id:+val('f-event_type_id')||null,space_id:+val('f-space_id')||null,time_slot_id:+val('f-time_slot_id')||null,
       date_evenement:val('f-date_evenement'),nombre_personnes:+val('f-nombre_personnes')||0,source:val('f-source'),message_client:val('f-message_client'),
-      prix_base:numv('f-prix_base'),remise_pct:numv('f-remise_pct'),remise_montant:numv('f-remise_montant'),acompte_montant:numv('f-acompte_montant'),
+      prix_base:numv('f-prix_base'),remise_pct:numv('f-remise_pct'),remise_montant:numv('f-remise_montant'),remise_label:val('f-remise_label'),acompte_montant:numv('f-acompte_montant'),
       options:this.selectedOptions(),traiteur:val('f-traiteur'),decorateur:val('f-decorateur'),prestataires:val('f-prestataires'),logistique:val('f-logistique')};
     const cm=document.getElementById('f-commercial_id');if(cm)o.commercial_id=+cm.value||null;
     return o;
@@ -241,9 +256,9 @@ const Config={
   data:null,active:'spaces',
   async load(){this.data=await api('GET','/config/all');this.settings=await api('GET','/settings');this.render();},
   render(){
-    const tabs=[['spaces','🏛️ Salles'],['pricing','💶 Tarifs'],['options','➕ Options'],['event_types','🎊 Types'],['time_slots','⏰ Horaires'],['settings','⚙️ Paramètres']];
+    const tabs=[['spaces','🏛️ Salles'],['pricing','💶 Tarifs'],['options','➕ Options'],['discounts','🏷️ Remises'],['event_types','🎊 Types'],['time_slots','⏰ Horaires'],['settings','⚙️ Paramètres']];
     let html=`<div class="config-tabs">${tabs.map(t=>`<button class="config-tab ${this.active===t[0]?'active':''}" onclick="Config.active='${t[0]}';Config.render()">${t[1]}</button>`).join('')}</div><div class="card"><div style="padding:20px">`;
-    html+=({spaces:()=>this.tableSpaces(),pricing:()=>this.tablePricing(),options:()=>this.tableOptions(),event_types:()=>this.tableSimple('event_types','Types d\'événement'),time_slots:()=>this.tableSlots(),settings:()=>this.formSettings()}[this.active])();
+    html+=({spaces:()=>this.tableSpaces(),pricing:()=>this.tablePricing(),options:()=>this.tableOptions(),discounts:()=>this.tableDiscounts(),event_types:()=>this.tableSimple('event_types','Types d\'événement'),time_slots:()=>this.tableSlots(),settings:()=>this.formSettings()}[this.active])();
     html+='</div></div>';
     document.getElementById('configRoot').innerHTML=html;
   },
@@ -261,6 +276,17 @@ const Config={
     ${this.data.options.map(o=>`<tr><td>${UI.esc(o.nom)}</td><td>${fmtEur(o.prix)}</td><td>${o.unite}</td><td><button class="btn btn-ghost btn-sm" onclick="Config.editOption(${o.id})">✏️</button> <button class="btn btn-red btn-sm" onclick="Config.del('options',${o.id})">🗑️</button></td></tr>`).join('')}</tbody></table>`;},
   tableSimple(table,title){return `<div style="display:flex;justify-content:space-between;margin-bottom:14px"><b>${title}</b><button class="btn btn-navy btn-sm" onclick="Config.editSimple('${table}','event-types')">+ Ajouter</button></div>
     <table><thead><tr><th>Nom</th><th>Actif</th><th></th></tr></thead><tbody>${this.data[table].map(x=>`<tr><td>${UI.esc(x.nom)}</td><td>${x.actif?'✅':'—'}</td><td><button class="btn btn-ghost btn-sm" onclick="Config.editSimple('${table}','event-types',${x.id})">✏️</button> <button class="btn btn-red btn-sm" onclick="Config.del('event-types',${x.id})">🗑️</button></td></tr>`).join('')}</tbody></table>`;},
+  tableDiscounts(){return `<div style="display:flex;justify-content:space-between;margin-bottom:14px"><b>Étiquettes de remise</b><button class="btn btn-navy btn-sm" onclick="Config.editDiscount()">+ Ajouter une étiquette</button></div>
+    <div class="alert alert-info">Chaque étiquette applique automatiquement un <b>pourcentage</b> ou un <b>montant fixe</b> à la réservation. Modifiable au cas par cas dans le devis.</div>
+    <table><thead><tr><th>Étiquette</th><th>Type</th><th>Valeur</th><th>Actif</th><th></th></tr></thead><tbody>
+    ${this.data.discounts.map(d=>`<tr><td><b>${UI.esc(d.libelle)}</b></td><td>${d.type==='pct'?'Pourcentage':'Montant fixe'}</td><td>${d.type==='pct'?d.valeur+' %':fmtEur(d.valeur)}</td><td>${d.actif?'✅':'—'}</td>
+    <td><button class="btn btn-ghost btn-sm" onclick="Config.editDiscount(${d.id})">✏️</button> <button class="btn btn-red btn-sm" onclick="Config.del('discounts',${d.id})">🗑️</button></td></tr>`).join('')}</tbody></table>`;},
+  editDiscount(id){const d=id?this.data.discounts.find(x=>x.id===id):{type:'pct',valeur:0,actif:1};this.genModal(id?'Modifier l\'étiquette':'Nouvelle étiquette de remise',[
+    {k:'libelle',label:'Étiquette',value:d.libelle,span:true},
+    {k:'type',label:'Type de remise',type:'select',value:d.type,opts:[{v:'pct',l:'Pourcentage (%)'},{v:'montant',l:'Montant fixe (€)'}]},
+    {k:'valeur',label:'Valeur',type:'number',value:d.valeur},
+    {k:'actif',label:'Actif',type:'select',value:d.actif??1,opts:[{v:1,l:'Oui'},{v:0,l:'Non'}]}],
+    ()=>api(id?'PUT':'POST','/discounts'+(id?'/'+id:''),{libelle:this.gv('libelle'),type:this.gv('type'),valeur:+this.gv('valeur'),actif:+this.gv('actif')}));},
   tableSlots(){return `<div style="display:flex;justify-content:space-between;margin-bottom:14px"><b>Plages horaires</b><button class="btn btn-navy btn-sm" onclick="Config.editSlot()">+ Ajouter</button></div>
     <table><thead><tr><th>Nom</th><th>Début</th><th>Fin</th><th></th></tr></thead><tbody>${this.data.time_slots.map(s=>`<tr><td>${UI.esc(s.nom)}</td><td>${s.heure_debut}</td><td>${s.heure_fin}</td><td><button class="btn btn-ghost btn-sm" onclick="Config.editSlot(${s.id})">✏️</button> <button class="btn btn-red btn-sm" onclick="Config.del('time-slots',${s.id})">🗑️</button></td></tr>`).join('')}</tbody></table>`;},
   name(table,id){if(!id)return'<span style="color:var(--text-lt)">tous</span>';const x=this.data[table].find(e=>e.id===id);return x?UI.esc(x.nom):'?';},
