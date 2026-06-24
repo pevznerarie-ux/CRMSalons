@@ -40,11 +40,10 @@ if (count('users') === 0) {
 // ─── SALLES / ESPACES ─────────────────────────────────────────────────────────
 if (count('spaces') === 0) {
   const spaces = [
-    ['Grand Salon d\'Honneur', 250, 400, 350, '#C9A84C', 'Salle principale avec piste de danse et scène.'],
-    ['Salle Bleue',            120, 180, 160, '#2D5282', 'Salle intermédiaire, lumineuse.'],
-    ['Espace Cocktail',         60, 120,  90, '#38A169', 'Idéal vin d\'honneur et réceptions debout.'],
-    ['Salle de Cérémonie',     150, 200, 180, '#7C3AED', 'Espace dédié aux cérémonies.'],
-    ['Mezzanine',               40,  60,  70, '#D69E2E', 'Espace en hauteur, vue sur la salle principale.'],
+    ['Grand Salon (320 m²)', 250, 320, 320, '#C9A84C', "Salon principal de 320 m² avec mezzanine, office de service et chambre froide. 250 places assises + 1 piste de danse, ou 220 + 2 pistes."],
+    ['Mezzanine — Poste d\'accueil', 50, 60, 0, '#2D5282', "Accueil sobre pour 50 personnes max : stand de boissons soft et crudités."],
+    ['Synagogue', 90, 90, 90, '#38A169', "Synagogue de 90 m² avec 90 places assises (gratuite sur demande)."],
+    ['Salle polyvalente', 150, 150, 0, '#7C3AED', "Espace pour buffet d'accueil jusqu'à 150 personnes."],
   ];
   const stmt = db.prepare(`INSERT INTO spaces (nom, capacite_assise, capacite_debout, surface_m2, couleur, description, ordre)
                            VALUES (?, ?, ?, ?, ?, ?, ?)`);
@@ -64,11 +63,10 @@ if (count('event_types') === 0) {
 // ─── PLAGES HORAIRES ────────────────────────────────────────────────────────────
 if (count('time_slots') === 0) {
   const slots = [
-    ['Déjeuner', '12:00', '17:00'],
-    ['Dîner', '19:00', '00:00'],
-    ['Journée complète', '12:00', '00:00'],
-    ['Matinée', '09:00', '13:00'],
-    ['Soirée tardive', '21:00', '04:00'],
+    ['Matinée', '08:00', '12:00'],
+    ['Après-midi', '12:00', '17:00'],
+    ['Soirée', '18:00', '00:00'],
+    ['Chabbat (vendredi soir & Chabbat midi)', '', ''],
   ];
   const stmt = db.prepare('INSERT INTO time_slots (nom, heure_debut, heure_fin, ordre) VALUES (?, ?, ?, ?)');
   slots.forEach((s, i) => stmt.run(...s, i));
@@ -78,12 +76,10 @@ if (count('time_slots') === 0) {
 // ─── OPTIONS / PRESTATIONS ──────────────────────────────────────────────────────
 if (count('options') === 0) {
   const opts = [
-    ['Ménage de fin d\'événement', 350, 'forfait'],
-    ['Agent de sécurité', 280, 'forfait'],
-    ['Vaisselle & couverts', 6, 'par_personne'],
-    ['Mise à disposition sono / éclairage', 450, 'forfait'],
-    ['Heure supplémentaire', 200, 'par_heure'],
-    ['Vestiaire', 150, 'forfait'],
+    ['Voiturier / Parking (59 places)', 350, 'forfait'],
+    ['Salle polyvalente — buffet d\'accueil (150 pers.)', 850, 'forfait'],
+    ['Synagogue (90 places) — gratuite sur demande', 0, 'forfait'],
+    ['Vestiaire avec hôtesse — inclus', 0, 'forfait'],
   ];
   const stmt = db.prepare('INSERT INTO options (nom, prix, unite, ordre) VALUES (?, ?, ?, ?)');
   opts.forEach((o, i) => stmt.run(...o, i));
@@ -92,28 +88,19 @@ if (count('options') === 0) {
 
 // ─── RÈGLES TARIFAIRES (prix de base par salle — placeholders à ajuster) ──────────
 if (count('pricing_rules') === 0) {
-  const spaces = db.prepare('SELECT id, nom FROM spaces ORDER BY ordre').all();
-  const basePrices = {
-    'Grand Salon d\'Honneur': 5200,
-    'Salle Bleue': 3200,
-    'Espace Cocktail': 1800,
-    'Salle de Cérémonie': 2600,
-    'Mezzanine': 1200,
-  };
-  const stmt = db.prepare(`INSERT INTO pricing_rules (libelle, space_id, day_type, prix, priorite)
-                           VALUES (?, ?, 'tous', ?, 0)`);
-  for (const s of spaces) {
-    const prix = basePrices[s.nom] ?? 2000;
-    stmt.run(`Tarif de base — ${s.nom}`, s.id, prix);
-  }
-  // Exemple de majoration week-end sur le Grand Salon (priorité plus haute)
-  const grand = spaces.find(s => s.nom.includes('Grand Salon'));
-  if (grand) {
-    db.prepare(`INSERT INTO pricing_rules (libelle, space_id, day_type, prix, priorite)
-                VALUES (?, ?, 'weekend', ?, 10)`)
-      .run('Week-end — Grand Salon', grand.id, 6200);
-  }
-  console.log('✅ Règles tarifaires de base pré-créées (à ajuster dans Paramètres > Tarifs).');
+  const grand = db.prepare("SELECT id FROM spaces WHERE nom LIKE 'Grand Salon%'").get();
+  const slotId = (nom) => db.prepare('SELECT id FROM time_slots WHERE nom = ?').get(nom)?.id;
+  // Tarifs réels du Grand Salon par créneau (frais sécurité/nettoyage inclus)
+  const rules = [
+    ['Matinée 8h-12h (salon 3000 + sécurité/nettoyage 350)', 'Matinée', 3350],
+    ['Après-midi 12h-17h (salon 3700 + sécurité/nettoyage 350)', 'Après-midi', 4050],
+    ['Soirée 18h-00h (salon 4700 + sécurité/nettoyage 500)', 'Soirée', 5200],
+    ['Chabbat — ven. soir & Chabbat midi (salon 5200 + sécurité/nettoyage 800)', 'Chabbat (vendredi soir & Chabbat midi)', 6000],
+  ];
+  const stmt = db.prepare(`INSERT INTO pricing_rules (libelle, space_id, time_slot_id, day_type, prix, priorite)
+                           VALUES (?, ?, ?, 'tous', ?, 0)`);
+  if (grand) rules.forEach(r => stmt.run(r[0], grand.id, slotId(r[1]), r[2]));
+  console.log('✅ Tarifs réels Beth Menahem pré-créés (par créneau, frais inclus).');
 }
 
 // ─── REMISES (étiquettes) ───────────────────────────────────────────────────────
