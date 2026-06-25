@@ -1,6 +1,6 @@
 // ─── Emails (nodemailer) ──────────────────────────────────────────────────────
 const nodemailer = require('nodemailer');
-const { fmtEur, fmtDate, getSetting } = require('./lib');
+const { fmtEur, fmtDate, getSetting, getSettings } = require('./lib');
 
 function transporter() {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) return null;
@@ -30,12 +30,14 @@ const S = {
   tdL:  "padding:9px 12px;border-bottom:1px solid #F0E8D8;font-size:14px;font-weight:600;color:#6B4423;width:38%;background:#FDFAF5",
 };
 function layout(inner) {
-  const org = getSetting('org_nom', "Salons d'Honneur Beth Menahem");
+  const s = getSettings();
+  const org = s.org_nom || "Salons d'Honneur Beth Menahem";
+  const contact = [s.org_adresse, s.org_telephone, s.org_email].filter(Boolean).join('  ·  ');
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
   <body style="margin:0;background:#F5F0E8"><div style="${S.wrap}">
-  <div style="${S.hdr}"><h1 style="${S.h1}">${org}</h1></div>
+  <div style="${S.hdr}"><h1 style="${S.h1}">${org}</h1>${contact ? `<div style="color:#d4b896;font-size:12px;margin-top:6px">${contact}</div>` : ''}</div>
   <div style="${S.body}">${inner}</div>
-  <div style="${S.foot}">${org}</div></div></body></html>`;
+  <div style="${S.foot}">${org}${contact ? `<br>${contact}` : ''}</div></div></body></html>`;
 }
 const row = (k, v) => v ? `<tr><td style="${S.tdL}">${k}</td><td style="${S.td}">${v}</td></tr>` : '';
 
@@ -61,14 +63,23 @@ const tplAlerteEquipe = (r) => layout(`
 
 const tplDevis = (r, lignesHtml) => layout(`
   <p>Bonjour <strong>${r.prenom} ${r.nom}</strong>,</p>
-  <p>Veuillez trouver ci-dessous votre devis pour votre événement. Le détail complet est joint en PDF.</p>
+  <p>Veuillez trouver ci-dessous votre devis pour votre événement. Le détail complet est également joint en PDF.</p>
   <table style="width:100%;border-collapse:collapse;margin:18px 0">
-    ${row('Référence', r.reference)}${row('Événement', r.type_label)}
-    ${row('Date', fmtDate(r.date_evenement))}${row('Salle', r.space_label)}
-    ${lignesHtml}
-    <tr><td style="${S.tdL}">Total</td><td style="${S.td}"><strong style="color:#276749;font-size:16px">${fmtEur(r.total)}</strong></td></tr>
+    ${row('Référence', r.reference)}
+    ${row('Événement', r.type_label)}
+    ${row('Date', fmtDate(r.date_evenement))}
+    ${row('Horaire', r.slot_label)}
+    ${row('Salle', r.space_label)}
+    ${row('Invités', r.nombre_personnes ? `${r.nombre_personnes} personnes` : '')}
   </table>
-  <p>Ce devis est valable 15 jours. Pour confirmer, un acompte vous sera demandé.</p>`);
+  <table style="width:100%;border-collapse:collapse;margin:18px 0">
+    ${lignesHtml}
+    ${r.remise_calculee > 0 ? row(`Remise${r.remise_label ? ` (${r.remise_label})` : ''}`, `– ${fmtEur(r.remise_calculee)}`) : ''}
+    <tr><td style="${S.tdL}">Total</td><td style="${S.td}"><strong style="color:#276749;font-size:16px">${fmtEur(r.total)}</strong></td></tr>
+    ${r.acompte_montant > 0 ? `<tr><td style="${S.tdL}">Acompte demandé</td><td style="${S.td}"><strong>${fmtEur(r.acompte_montant)}</strong> à la réservation</td></tr>` : ''}
+  </table>
+  <p>Ce devis est valable 15 jours. La réservation devient ferme à réception de l'acompte et du contrat signé.</p>
+  <p style="font-size:13px;color:#666">Pour toute question, vous pouvez nous contacter directement${getSetting('org_telephone') ? ` au <strong>${getSetting('org_telephone')}</strong>` : ''}.</p>`);
 
 const tplConfirmation = (r) => layout(`
   <p>Bonjour <strong>${r.prenom} ${r.nom}</strong>,</p>

@@ -95,8 +95,17 @@ function buildDevis(r) {
   y = table(doc, r, y);
   doc.fontSize(9).fillColor(GREY).font('Helvetica')
      .text('Devis valable 15 jours. La réservation est ferme à réception de l\'acompte et du contrat signé.', 50, y, { width: doc.page.width - 100 });
+  footer(doc, org);
   doc.end();
   return new Promise((resolve) => stream.on('finish', () => resolve({ filename })));
+}
+
+// Pied de page avec les coordonnées du lieu
+function footer(doc, org) {
+  const contact = [org.org_nom, org.org_adresse, org.org_telephone, org.org_email].filter(Boolean).join('   •   ');
+  if (!contact) return;
+  doc.fontSize(8.5).fillColor(GREY).font('Helvetica')
+     .text(contact, 50, doc.page.height - 58, { align: 'center', width: doc.page.width - 100 });
 }
 
 function buildContrat(r) {
@@ -121,6 +130,7 @@ function buildContrat(r) {
      .text('Le client (lu et approuvé)', 320, ySign);
   doc.moveTo(50, ySign + 55).lineTo(240, ySign + 55).strokeColor('#999').stroke();
   doc.moveTo(320, ySign + 55).lineTo(510, ySign + 55).strokeColor('#999').stroke();
+  footer(doc, org);
   doc.end();
   return new Promise((resolve) => stream.on('finish', () => resolve({ filename })));
 }

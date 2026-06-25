@@ -33,7 +33,10 @@ function logActivity(reservationId, user, action, details = '') {
     .run(reservationId || null, user?.id || null, user?.email || 'système', action, details);
 }
 
-const fmtEur = (n) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(n || 0);
+// On remplace les espaces insécables spéciaux (U+202F, U+00A0) par des espaces
+// normaux, sinon le moteur PDF affiche un caractère parasite à leur place.
+const fmtEur = (n) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' })
+  .format(n || 0).replace(/[  ]/g, ' ');
 const fmtDate = (d) => {
   if (!d) return '—';
   try { return new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }); }

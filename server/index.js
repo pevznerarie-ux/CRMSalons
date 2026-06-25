@@ -506,14 +506,20 @@ app.post('/api/reservations/:id/documents', requireAuth, requireRole('commercial
   logActivity(r.id, req.user, 'document_ajoute', `${req.body.type}: ${req.file.originalname}`);
   res.json({ success: true });
 });
+// Calcule le devis complet (prix + acompte demandé) pour une réservation enrichie
+function devisData(r) {
+  const q = pricing.quote({ space_id: r.space_id, event_type_id: r.event_type_id, time_slot_id: r.time_slot_id,
+    date: r.date_evenement, nombre_personnes: r.nombre_personnes, options: r.options, remise_pct: r.remise_pct,
+    remise_montant: r.remise_montant, prix_base_override: r.prix_base });
+  const acomptePct = parseFloat(getSetting('acompte_pct', '30')) || 30;
+  const acompte = r.acompte_montant > 0 ? r.acompte_montant : Math.round(q.total * acomptePct / 100);
+  return { ...r, ...q, acompte_montant: acompte };
+}
 app.post('/api/reservations/:id/documents/generate', requireAuth, requireRole('commercial', 'administratif'), async (req, res) => {
   const r = getFull(req.params.id);
   if (!r) return res.status(404).json({ error: 'Introuvable' });
   const type = req.body.type === 'contrat' ? 'contrat' : 'devis';
-  const q = pricing.quote({ space_id: r.space_id, event_type_id: r.event_type_id, time_slot_id: r.time_slot_id,
-    date: r.date_evenement, nombre_personnes: r.nombre_personnes, options: r.options, remise_pct: r.remise_pct,
-    remise_montant: r.remise_montant, prix_base_override: r.prix_base });
-  const data = { ...r, ...q };
+  const data = devisData(r);
   const { filename } = type === 'contrat' ? await pdf.buildContrat(data) : await pdf.buildDevis(data);
   db.prepare(`INSERT INTO documents (reservation_id, type, filename, original_name, genere) VALUES (?,?,?,?,1)`)
     .run(r.id, type, filename, `${type}-${r.reference}.pdf`);
@@ -529,10 +535,13 @@ app.delete('/api/documents/:id', requireAuth, requireRole('commercial', 'adminis
 app.post('/api/reservations/:id/send-devis', requireAuth, requireRole('commercial', 'administratif'), async (req, res) => {
   const r = getFull(req.params.id);
   if (!r) return res.status(404).json({ error: 'Introuvable' });
+  const { fmtEur } = require('./lib');
+  const data = devisData(r);
   const doc = db.prepare("SELECT * FROM documents WHERE reservation_id = ? AND type='devis' ORDER BY id DESC LIMIT 1").get(r.id);
-  const lignes = r.options.map(o => mailer.row(o.nom, require('./lib').fmtEur(o.total))).join('');
+  const lignes = mailer.row(`Location — ${data.space_label || 'salle'}`, fmtEur(data.prix_base))
+    + data.options.map(o => mailer.row(o.nom + (o.unite === 'par_personne' ? ` (${o.quantite} pers.)` : (o.quantite > 1 ? ` ×${o.quantite}` : '')), fmtEur(o.total))).join('');
   const attachments = doc ? [{ filename: `devis-${r.reference}.pdf`, path: path.join(uploadDir, doc.filename) }] : [];
-  await mailer.sendMail({ to: r.email, subject: `Votre devis — réf. ${r.reference}`, html: mailer.tplDevis(r, lignes), attachments });
+  await mailer.sendMail({ to: r.email, subject: `Votre devis — réf. ${r.reference}`, html: mailer.tplDevis(data, lignes), attachments });
   db.prepare("UPDATE reservations SET statut = CASE WHEN statut='demande' THEN 'devis_envoye' ELSE statut END, updated_at=? WHERE id=?").run(now(), r.id);
   logActivity(r.id, req.user, 'devis_envoye');
   res.json({ success: true });
