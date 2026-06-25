@@ -89,19 +89,41 @@ app.get('/api/config', (req, res) => {
 });
 
 // ─── PUBLIC : DEMANDE DE DEVIS DEPUIS LE SITE ──────────────────────────────────
+// Résout un id depuis un libellé (insensible aux accents/casse/ponctuation), sinon null.
+function resolveByName(table, text) {
+  if (!text) return null;
+  const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+  const t = norm(text);
+  if (!t) return null;
+  const rows = db.prepare(`SELECT id, nom FROM ${table} WHERE actif = 1`).all();
+  let hit = rows.find(r => norm(r.nom) === t);
+  if (!hit) hit = rows.find(r => t.includes(norm(r.nom)) || norm(r.nom).includes(t));
+  return hit ? hit.id : null;
+}
+
 app.post('/api/devis', (req, res) => {
   const b = req.body;
-  if (!b.nom || !b.prenom || !b.telephone || !b.email || !b.event_type_id || !b.date_evenement) {
-    return res.status(400).json({ error: 'Champs obligatoires manquants.' });
+  // Accepte soit les identifiants directs, soit le texte envoyé par le formulaire public
+  const eventTypeId = b.event_type_id || resolveByName('event_types', b.type_evenement);
+  const timeSlotId  = b.time_slot_id  || resolveByName('time_slots',  b.plage_horaire);
+  if (!b.nom || !b.prenom || !b.telephone || !b.email || !b.date_evenement) {
+    return res.status(400).json({ error: 'Merci de renseigner nom, prénom, téléphone, email et date.' });
   }
+  // On conserve dans le message toute info texte non reliée (rien n'est perdu)
+  let message = (b.message_client || b.message || '').trim();
+  const extras = [];
+  if (b.type_evenement && !eventTypeId) extras.push(`Type souhaité : ${b.type_evenement}`);
+  if (b.plage_horaire  && !timeSlotId)  extras.push(`Créneau souhaité : ${b.plage_horaire}`);
+  if (extras.length) message = extras.join(' — ') + (message ? '\n' + message : '');
+
   const ref = genRef();
   const info = db.prepare(`INSERT INTO reservations
     (reference, nom, prenom, telephone, email, event_type_id, space_id, time_slot_id,
      date_evenement, nombre_personnes, message_client, statut, source)
     VALUES (?,?,?,?,?,?,?,?,?,?,?, 'demande', ?)`).run(
       ref, b.nom.trim(), b.prenom.trim(), b.telephone.trim(), b.email.trim(),
-      b.event_type_id || null, b.space_id || null, b.time_slot_id || null,
-      b.date_evenement, parseInt(b.nombre_personnes) || 0, b.message_client || '', b.source || 'site');
+      eventTypeId || null, b.space_id || null, timeSlotId || null,
+      b.date_evenement, parseInt(b.nombre_personnes) || 0, message, b.source || 'site');
   const r = enrich(db.prepare('SELECT * FROM reservations WHERE id = ?').get(info.lastInsertRowid));
   logActivity(r.id, null, 'demande_creee', `Demande reçue depuis le site (${r.source})`);
 
