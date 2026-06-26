@@ -1,688 +1,933 @@
 <!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Salons d'Honneur Beth Menahem — Levallois</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --gold:    #C9A84C;
-      --gold-lt: #E2C97E;
-      --navy:    #0d1b2a;
-      --navy2:   #162237;
-      --white:   #ffffff;
-      --cream:   #F8F4EC;
-      --text:    #2c2c2c;
-      --muted:   #666;
-    }
-    html { scroll-behavior: smooth; }
-    body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--text); overflow-x: hidden; }
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-    /* ── NAV ── */
-    nav {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 999;
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 5%; height: 72px;
-      background: rgba(13,27,42,.96); backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(201,168,76,.2);
-    }
-    .nav-logo { font-family: 'Playfair Display',serif; font-size: 1.2rem; font-weight: 700; color: var(--gold); text-decoration: none; line-height: 1.2; }
-    .nav-logo span { display: block; font-size: .62rem; font-family: 'Inter',sans-serif; font-weight: 300; letter-spacing: 3px; color: rgba(255,255,255,.45); text-transform: uppercase; }
-    .nav-links { display: flex; gap: 2rem; list-style: none; }
-    .nav-links a { color: rgba(255,255,255,.75); text-decoration: none; font-size: .85rem; font-weight: 500; transition: color .2s; }
-    .nav-links a:hover { color: var(--gold); }
-    .nav-cta { background: var(--gold); color: var(--navy); padding: .5rem 1.35rem; border-radius: 30px; font-size: .85rem; font-weight: 700; text-decoration: none; transition: background .2s; }
-    .nav-cta:hover { background: var(--gold-lt); }
-    .burger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
-    .burger span { display: block; width: 24px; height: 2px; background: var(--gold); border-radius: 2px; }
-
-    /* ── HERO ── */
-    @keyframes heroReveal {
-      0%   { transform:scale(1.12); opacity:0; filter:brightness(.35) saturate(.6); }
-      100% { transform:scale(1.0);  opacity:1; filter:brightness(1)   saturate(1);  }
-    }
-    @keyframes breathe   { 0%,100%{transform:scale(1.0)} 50%{transform:scale(1.03)} }
-    @keyframes warmGlow  { 0%,100%{opacity:.45} 50%{opacity:.72} }
-    @keyframes fadeRise  {
-      from { opacity:0; transform:translateY(20px); }
-      to   { opacity:1; transform:translateY(0); }
-    }
-    @keyframes lineGrow  { from{width:0;opacity:0} to{width:56px;opacity:1} }
-    @keyframes pulse     { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(9px)} }
-
-    #hero {
-      min-height: 100vh; position: relative;
-      display: flex; align-items: center; justify-content: center; text-align: center;
-      overflow: hidden; background: #060e18;
-    }
-    .hero-img {
-      position: absolute; inset: 0;
-      background: url('/images/hero.jpg') center 42% / cover no-repeat;
-      animation:
-        heroReveal 3.4s cubic-bezier(0.16,1,0.3,1) both,
-        breathe    22s ease-in-out 3.4s infinite;
-      will-change: transform, opacity, filter;
-    }
-    .hero-overlay {
-      position: absolute; inset: 0; z-index: 1;
-      background:
-        radial-gradient(ellipse 70% 60% at 50% 50%, rgba(201,168,76,.07) 0%, transparent 70%),
-        linear-gradient(180deg, rgba(6,14,24,.72) 0%, rgba(6,14,24,.25) 45%, rgba(6,14,24,.82) 100%);
-    }
-    .hero-warm-pulse {
-      position: absolute; inset: 0; z-index: 2; pointer-events: none;
-      background: radial-gradient(ellipse 55% 45% at 50% 52%, rgba(201,168,76,.09) 0%, transparent 65%);
-      animation: warmGlow 7s ease-in-out infinite;
-    }
-    .hero-cursor-light {
-      position: absolute; z-index: 3; pointer-events: none;
-      width: 600px; height: 600px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(201,168,76,.10) 0%, transparent 60%);
-      transform: translate(-50%,-50%); opacity: 0; transition: opacity 1.5s;
-    }
-    .hero-content { position: relative; z-index: 4; padding: 0 24px; max-width: 860px; }
-    .hero-eyebrow {
-      display: inline-block; color: rgba(201,168,76,.9); margin-bottom: 2.2rem;
-      font-size: .6rem; font-weight: 500; letter-spacing: 6px; text-transform: uppercase;
-      text-shadow: 0 1px 16px rgba(0,0,0,.9);
-      opacity: 0; animation: fadeRise 1s cubic-bezier(0.16,1,0.3,1) 2.2s both;
-    }
-    .hero-title {
-      line-height: 1; margin-bottom: .5rem;
-      opacity: 0; animation: fadeRise 1.2s cubic-bezier(0.16,1,0.3,1) 2.8s both;
-    }
-    .hero-title-main {
-      display: block;
-      font-family: 'Cormorant Garamond', serif;
-      font-size: clamp(3.2rem, 8.5vw, 7.5rem);
-      font-weight: 300;
-      letter-spacing: .2em;
-      text-transform: uppercase;
-      color: #ffffff;
-      text-shadow: 0 2px 40px rgba(0,0,0,.7), 0 0 80px rgba(0,0,0,.4);
-    }
-    .hero-title-line {
-      display: block; margin: .9rem auto 1rem;
-      height: 1px; background: var(--gold); opacity: 0;
-      animation: lineGrow 1.1s cubic-bezier(0.16,1,0.3,1) 3.6s both;
-    }
-    .hero-title-sub {
-      display: block;
-      font-family: 'Cormorant Garamond', serif;
-      font-size: clamp(1rem, 2.2vw, 1.5rem);
-      font-weight: 300; font-style: italic;
-      color: #E8D48A;
-      letter-spacing: .08em;
-      margin-top: .4em;
-      text-shadow: 0 2px 24px rgba(0,0,0,.8), 0 0 60px rgba(0,0,0,.5);
-    }
-    .hero-location {
-      font-size: .68rem; color: rgba(255,255,255,.6);
-      letter-spacing: 4px; text-transform: uppercase; margin-bottom: 2.2rem;
-      margin-top: 2rem;
-      text-shadow: 0 1px 16px rgba(0,0,0,.9);
-      opacity: 0; animation: fadeRise .9s cubic-bezier(0.16,1,0.3,1) 4s both;
-    }
-    .hero-sub {
-      font-size: .92rem; color: rgba(255,255,255,.75);
-      line-height: 2; max-width: 420px; margin: 0 auto 3rem; font-weight: 300;
-      text-shadow: 0 1px 20px rgba(0,0,0,.9);
-      opacity: 0; animation: fadeRise .9s cubic-bezier(0.16,1,0.3,1) 4.4s both;
-    }
-    .hero-btns {
-      display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
-      opacity: 0; animation: fadeRise .9s cubic-bezier(0.16,1,0.3,1) 4.8s both;
-    }
-    .btn-gold { background: var(--gold); color: var(--navy); padding: .9rem 2.2rem; border-radius: 40px; font-size: .85rem; font-weight: 600; text-decoration: none; transition: all .3s; letter-spacing: .04em; }
-    .btn-gold:hover { background: var(--gold-lt); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(201,168,76,.35); }
-    .btn-outline { border: 1px solid rgba(201,168,76,.35); color: rgba(201,168,76,.85); padding: .9rem 2.2rem; border-radius: 40px; font-size: .85rem; font-weight: 400; text-decoration: none; transition: all .3s; letter-spacing: .04em; }
-    .btn-outline:hover { background: rgba(201,168,76,.07); border-color: var(--gold); color: var(--gold); }
-    .hero-scroll {
-      position: absolute; bottom: 2.2rem; left: 50%;
-      color: rgba(255,255,255,.2); font-size: .58rem; letter-spacing: 3px; text-transform: uppercase;
-      display: flex; flex-direction: column; align-items: center; gap: 10px;
-      opacity: 0; animation: fadeRise .9s cubic-bezier(0.16,1,0.3,1) 5.3s both; z-index: 5;
-    }
-    .hero-scroll::after { content: ''; display: block; width: 1px; height: 36px; background: linear-gradient(to bottom, rgba(201,168,76,.28), transparent); }
-
-    /* ── SECTIONS ── */
-    section { padding: 6rem 5%; }
-    .sec-label { font-size: .68rem; font-weight: 600; letter-spacing: 4px; text-transform: uppercase; color: var(--gold); display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
-    .sec-label::before, .sec-label::after { content: ''; flex: 0 0 28px; height: 1px; background: var(--gold); opacity: .5; }
-    .sec-title { font-family: 'Playfair Display',serif; font-size: clamp(1.9rem,4vw,2.9rem); font-weight: 700; line-height: 1.2; color: var(--navy); }
-    .sec-title em { color: var(--gold); font-style: italic; }
-    .sec-sub { font-size: 1rem; color: var(--muted); line-height: 1.8; max-width: 600px; margin-top: .75rem; }
-    .sec-center { text-align: center; margin-bottom: 4rem; }
-    .sec-center .sec-label { justify-content: center; }
-    .sec-center .sec-sub { margin: .75rem auto 0; }
-
-    /* ── ABOUT ── */
-    #about { background: var(--cream); display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: center; }
-    .about-img-wrap {
-      position: relative; border-radius: 6px; overflow: hidden;
-      aspect-ratio: 4/3; box-shadow: 0 20px 60px rgba(0,0,0,.15);
-    }
-    .about-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
-    .about-badge {
-      position: absolute; bottom: -1.5rem; right: -1.5rem;
-      width: 110px; height: 110px; border-radius: 50%;
-      background: var(--gold); color: var(--navy);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      font-family: 'Playfair Display',serif;
-      box-shadow: 0 8px 30px rgba(0,0,0,.25);
-    }
-    .about-badge strong { font-size: 1.9rem; font-weight: 700; line-height: 1; }
-    .about-badge small { font-size: .58rem; font-weight: 600; letter-spacing: .5px; text-align: center; line-height: 1.3; }
-    .about-specs { margin-top: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
-    .spec { background: var(--white); border-radius: 8px; padding: .9rem 1rem; border-left: 3px solid var(--gold); }
-    .spec-val { font-size: 1.1rem; font-weight: 700; color: var(--navy); font-family: 'Playfair Display',serif; }
-    .spec-lbl { font-size: .72rem; color: var(--muted); margin-top: 2px; }
-    .about-features { margin-top: 1.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
-    .about-feat { display: flex; align-items: center; gap: 8px; font-size: .875rem; color: var(--muted); }
-    .about-feat::before { content: '◆'; color: var(--gold); font-size: .4rem; flex-shrink: 0; }
-
-    /* ── BROCHURE CTA ── */
-    #brochure {
-      background: var(--navy); padding: 5rem 5%; text-align: center;
-    }
-    .brochure-inner { max-width: 640px; margin: 0 auto; }
-    .brochure-inner .sec-label { justify-content: center; }
-    .brochure-inner .sec-title { color: #fff; margin: .5rem 0 1rem; }
-    .brochure-inner p { color: rgba(255,255,255,.5); font-size: .95rem; line-height: 1.75; margin-bottom: 2rem; }
-    .brochure-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
-
-    /* ── ESPACES ── */
-    #espaces { background: var(--white); }
-    .espaces-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem; }
-    .espace-card { border-radius: 10px; overflow: hidden; border: 1px solid #e8e8e8; transition: transform .3s, box-shadow .3s; display: flex; flex-direction: column; }
-    .espace-card:hover { transform: translateY(-6px); box-shadow: 0 20px 60px rgba(0,0,0,.12); }
-    .espace-card.featured { grid-column: span 2; display: grid; grid-template-columns: 1.2fr 1fr; }
-    .espace-img { position: relative; overflow: hidden; }
-    .espace-card:not(.featured) .espace-img { aspect-ratio: 16/9; }
-    .espace-card.featured .espace-img { min-height: 380px; }
-    .espace-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
-    .espace-card:hover .espace-img img { transform: scale(1.04); }
-    .espace-surface {
-      position: absolute; top: 1rem; left: 1rem;
-      background: var(--gold); color: var(--navy);
-      padding: 4px 12px; border-radius: 20px; font-size: .72rem; font-weight: 700;
-    }
-    .espace-body { padding: 1.75rem; flex: 1; display: flex; flex-direction: column; }
-    .espace-name { font-family: 'Playfair Display',serif; font-size: 1.3rem; font-weight: 700; color: var(--navy); margin-bottom: .5rem; }
-    .espace-capacity { font-size: .82rem; color: var(--gold); font-weight: 600; letter-spacing: .5px; text-transform: uppercase; margin-bottom: .75rem; }
-    .espace-desc { font-size: .9rem; color: var(--muted); line-height: 1.75; flex: 1; }
-    .espace-tags { margin-top: 1.25rem; display: flex; flex-wrap: wrap; gap: 6px; }
-    .tag { font-size: .7rem; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--gold); color: var(--gold); background: rgba(201,168,76,.05); }
-
-    /* ── OPTIONS ── */
-    #options { background: var(--cream); }
-    .options-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1.5rem; }
-    .opt-card { background: var(--white); border-radius: 10px; padding: 1.75rem 1.5rem; text-align: center; border: 1px solid #e8e8e8; transition: all .3s; }
-    .opt-card:hover { box-shadow: 0 10px 40px rgba(0,0,0,.08); transform: translateY(-4px); }
-    .opt-icon { font-size: 2rem; margin-bottom: 1rem; }
-    .opt-name { font-family: 'Playfair Display',serif; font-size: 1rem; font-weight: 700; color: var(--navy); margin-bottom: .5rem; }
-    .opt-desc { font-size: .82rem; color: var(--muted); line-height: 1.6; }
-    .opt-badge { display: inline-block; margin-top: .75rem; font-size: .72rem; font-weight: 700; padding: 3px 12px; border-radius: 20px; }
-    .opt-badge.inclus { background: rgba(16,185,129,.1); color: #065f46; border: 1px solid rgba(16,185,129,.2); }
-    .opt-badge.option { background: rgba(201,168,76,.1); color: #7a5a1a; border: 1px solid rgba(201,168,76,.2); }
-
-    /* ── SERVICES ── */
-    #services { background: var(--navy); }
-    #services .sec-title { color: var(--white); }
-    #services .sec-sub { color: rgba(255,255,255,.5); }
-    .services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 1.5rem; }
-    .svc { text-align: center; padding: 2rem 1.25rem; border: 1px solid rgba(201,168,76,.12); border-radius: 8px; transition: all .3s; }
-    .svc:hover { border-color: rgba(201,168,76,.4); background: rgba(201,168,76,.04); }
-    .svc-icon { font-size: 2rem; margin-bottom: .75rem; }
-    .svc-name { font-family: 'Playfair Display',serif; font-size: .95rem; color: var(--gold); margin-bottom: .4rem; }
-    .svc-text { font-size: .78rem; color: rgba(255,255,255,.4); line-height: 1.6; }
-
-    /* ── DEVIS ── */
-    #devis { background: var(--cream); }
-    .form-wrap { max-width: 760px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 3rem; box-shadow: 0 20px 80px rgba(0,0,0,.08); border-top: 4px solid var(--gold); }
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
-    .form-full { grid-column: 1 / -1; }
-    .fg { display: flex; flex-direction: column; gap: 6px; }
-    .fg label { font-size: .75rem; font-weight: 600; color: var(--navy); letter-spacing: .3px; text-transform: uppercase; }
-    .fg label .req { color: var(--gold); }
-    .fg input, .fg select, .fg textarea { border: 1.5px solid #e0e0e0; border-radius: 6px; padding: .75rem 1rem; font-size: .95rem; font-family: 'Inter',sans-serif; color: var(--text); transition: border-color .2s; background: #fafafa; appearance: none; }
-    .fg input:focus, .fg select:focus, .fg textarea:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,.12); background: #fff; }
-    .fg textarea { resize: vertical; min-height: 100px; }
-    .fg select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23C9A84C'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 2.5rem; cursor: pointer; }
-    .form-btn { width: 100%; padding: 1rem; border: none; border-radius: 40px; background: var(--navy); color: var(--gold); font-size: 1rem; font-weight: 700; cursor: pointer; letter-spacing: .5px; transition: all .25s; margin-top: .5rem; font-family: 'Inter',sans-serif; }
-    .form-btn:hover { background: var(--gold); color: var(--navy); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(201,168,76,.3); }
-    .form-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
-    .form-msg { display: none; padding: 1rem 1.25rem; border-radius: 8px; font-size: .9rem; font-weight: 500; text-align: center; margin-top: 1rem; }
-    .form-msg.ok { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; display: block; }
-    .form-msg.err { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; display: block; }
-
-    /* ── CONTACT ── */
-    #contact { background: var(--navy); display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: start; }
-    #contact .sec-title { color: #fff; }
-    #contact .sec-sub { color: rgba(255,255,255,.5); }
-    .contact-list { margin-top: 2rem; display: flex; flex-direction: column; gap: 1.5rem; }
-    .contact-item { display: flex; align-items: flex-start; gap: 1rem; }
-    .contact-ico { width: 46px; height: 46px; border-radius: 50%; background: rgba(201,168,76,.1); border: 1px solid rgba(201,168,76,.2); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
-    .contact-txt strong { display: block; color: var(--gold); font-size: .72rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 3px; }
-    .contact-txt span { color: rgba(255,255,255,.7); font-size: .9rem; line-height: 1.6; }
-    .contact-txt a { color: rgba(255,255,255,.7); text-decoration: none; transition: color .2s; }
-    .contact-txt a:hover { color: var(--gold); }
-    .contact-map-wrap { border-radius: 10px; overflow: hidden; border: 1px solid rgba(201,168,76,.15); }
-    .contact-map-wrap iframe { display: block; width: 100%; height: 380px; border: 0; }
-    .contact-sinai { margin-top: 2rem; padding: 1.25rem; background: rgba(201,168,76,.06); border: 1px solid rgba(201,168,76,.15); border-radius: 8px; }
-    .contact-sinai p { font-size: .82rem; color: rgba(255,255,255,.5); line-height: 1.7; }
-    .contact-sinai strong { color: var(--gold); }
-
-    /* ── FOOTER ── */
-    footer { background: #060e18; padding: 1.75rem 5%; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(201,168,76,.1); flex-wrap: wrap; gap: 1rem; }
-    .footer-logo { font-family: 'Playfair Display',serif; color: var(--gold); font-size: 1rem; }
-    .footer-logo small { display: block; font-family: 'Inter',sans-serif; font-size: .65rem; color: rgba(255,255,255,.35); font-weight: 400; letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
-    .footer-copy { color: rgba(255,255,255,.28); font-size: .75rem; }
-
-    /* ── RESPONSIVE ── */
-    @media (max-width:1024px) {
-      #about { grid-template-columns: 1fr; gap: 3rem; }
-      #contact { grid-template-columns: 1fr; gap: 3rem; }
-      .options-grid { grid-template-columns: repeat(2,1fr); }
-    }
-    @media (max-width:768px) {
-      .nav-links { display: none; flex-direction: column; position: fixed; top: 72px; left: 0; right: 0; background: rgba(13,27,42,.98); padding: 1.5rem; gap: 1rem; z-index: 998; }
-      .nav-links.open { display: flex; }
-      .burger { display: flex; }
-      .nav-cta { display: none; }
-      .espaces-grid, .espace-card.featured { grid-template-columns: 1fr; }
-      .espace-card.featured { grid-column: span 1; }
-      .form-grid { grid-template-columns: 1fr; }
-      .form-full { grid-column: 1; }
-      .form-wrap { padding: 2rem 1.5rem; }
-      section { padding: 4rem 5%; }
-      .options-grid { grid-template-columns: 1fr 1fr; }
-    }
-  </style>
+<title>Salons d'Honneur Beth Menahem — Salle de réception</title>
 </head>
 <body>
+<x-dc>
+<helmet>
 
-<!-- NAV -->
-<nav>
-  <a href="#" class="nav-logo">Salons d'Honneur <span>Beth Menahem · Levallois</span></a>
-  <ul class="nav-links" id="navLinks">
-    <li><a href="#about">Le Complexe</a></li>
-    <li><a href="#espaces">Nos Espaces</a></li>
-    <li><a href="#services">Événements</a></li>
-    <li><a href="/galerie">Brochure</a></li>
-    <li><a href="#devis">Demander un devis</a></li>
-    <li><a href="#contact">Contact</a></li>
-  </ul>
-  <a href="#devis" class="nav-cta">Devis gratuit</a>
-  <div class="burger" onclick="this.classList.toggle('active');document.getElementById('navLinks').classList.toggle('open')">
-    <span></span><span></span><span></span>
-  </div>
-</nav>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<style>/* latin-ext */
+@font-face {
+  font-family: 'Cinzel';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("e0079f03-d534-4f91-8ed6-93b161c92aa3") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Cinzel';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("1257d11a-4977-4643-94d5-f016a7d4e9ac") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Cinzel';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("e0079f03-d534-4f91-8ed6-93b161c92aa3") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Cinzel';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("1257d11a-4977-4643-94d5-f016a7d4e9ac") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Cinzel';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("e0079f03-d534-4f91-8ed6-93b161c92aa3") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Cinzel';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("1257d11a-4977-4643-94d5-f016a7d4e9ac") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("84b930a4-18a7-4b4a-b601-f7c2313ef59c") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("e47c8a4b-24dd-4ec1-b45e-694a0dd9d225") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("42f8ef08-cc68-4ec3-9014-66417c7e522e") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("1d6a9ed9-bb13-4e9a-8cef-3d246769bdd5") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("893647ad-2cef-42de-86b5-95985afeb4f2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+  src: url("84b930a4-18a7-4b4a-b601-f7c2313ef59c") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+  src: url("e47c8a4b-24dd-4ec1-b45e-694a0dd9d225") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+  src: url("42f8ef08-cc68-4ec3-9014-66417c7e522e") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+  src: url("1d6a9ed9-bb13-4e9a-8cef-3d246769bdd5") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+  src: url("893647ad-2cef-42de-86b5-95985afeb4f2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 600;
+  font-display: swap;
+  src: url("84b930a4-18a7-4b4a-b601-f7c2313ef59c") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 600;
+  font-display: swap;
+  src: url("e47c8a4b-24dd-4ec1-b45e-694a0dd9d225") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 600;
+  font-display: swap;
+  src: url("42f8ef08-cc68-4ec3-9014-66417c7e522e") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 600;
+  font-display: swap;
+  src: url("1d6a9ed9-bb13-4e9a-8cef-3d246769bdd5") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 600;
+  font-display: swap;
+  src: url("893647ad-2cef-42de-86b5-95985afeb4f2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("9580b029-a685-438d-9988-b9af5befd6a2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("727e3b64-c9fa-4ba2-a4f4-daf264fe3f4d") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("bef51153-0faa-4442-ba89-923b876733e7") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("a0537b2e-6a53-43ef-bacd-fee388ba96bb") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("c274f7c1-c4de-49e1-a28c-1e9f023e4d17") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("9580b029-a685-438d-9988-b9af5befd6a2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("727e3b64-c9fa-4ba2-a4f4-daf264fe3f4d") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("bef51153-0faa-4442-ba89-923b876733e7") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("a0537b2e-6a53-43ef-bacd-fee388ba96bb") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("c274f7c1-c4de-49e1-a28c-1e9f023e4d17") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("9580b029-a685-438d-9988-b9af5befd6a2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("727e3b64-c9fa-4ba2-a4f4-daf264fe3f4d") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("bef51153-0faa-4442-ba89-923b876733e7") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("a0537b2e-6a53-43ef-bacd-fee388ba96bb") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("c274f7c1-c4de-49e1-a28c-1e9f023e4d17") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Jost';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("8e7dac06-39d1-4af3-8b15-28320a6e1d0b") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Jost';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("b57783b4-a381-4d71-9f0f-e14d44dc09b9") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Jost';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("2e6f9b26-f8bf-4ab0-b939-2f0fc74bcac5") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Jost';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("8e7dac06-39d1-4af3-8b15-28320a6e1d0b") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Jost';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("b57783b4-a381-4d71-9f0f-e14d44dc09b9") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Jost';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("2e6f9b26-f8bf-4ab0-b939-2f0fc74bcac5") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Jost';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("8e7dac06-39d1-4af3-8b15-28320a6e1d0b") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Jost';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("b57783b4-a381-4d71-9f0f-e14d44dc09b9") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Jost';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("2e6f9b26-f8bf-4ab0-b939-2f0fc74bcac5") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Jost';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("8e7dac06-39d1-4af3-8b15-28320a6e1d0b") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Jost';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("b57783b4-a381-4d71-9f0f-e14d44dc09b9") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Jost';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("2e6f9b26-f8bf-4ab0-b939-2f0fc74bcac5") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:#F4EEE2;color:#2A2117;font-family:'Jost',sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  ::selection{background:#B58B45;color:#fff}
+  a{color:inherit;text-decoration:none}
+  input,select,textarea,button{font-family:inherit}
+  input:focus,select:focus,textarea:focus{outline:none}
+  .__rv{opacity:0;transform:translateY(26px);transition:opacity 1.1s cubic-bezier(.16,.7,.2,1),transform 1.1s cubic-bezier(.16,.7,.2,1)}
+  .__rv.__in{opacity:1;transform:none}
+  @keyframes kenBurns{0%{transform:scale(1.05)}100%{transform:scale(1.16)}}
+  @keyframes heroRise{0%{opacity:0;transform:translateY(30px)}100%{opacity:1;transform:none}}
+  @keyframes heroWipe{0%{opacity:0;clip-path:inset(0 0 108% 0);transform:translateY(8px)}100%{opacity:1;clip-path:inset(0 0 -10% 0);transform:none}}
+  @keyframes blurIn{0%{opacity:0;filter:blur(12px);transform:translateY(16px) scale(.985)}100%{opacity:1;filter:blur(0);transform:none}}
+  @keyframes lineGrow{0%{transform:scaleX(0);opacity:0}100%{transform:scaleX(1);opacity:1}}
+  @keyframes softPulse{0%,100%{opacity:.55}50%{opacity:1}}
+  @keyframes cross3b{0%,28%{opacity:0}33%,66%{opacity:1}68%,100%{opacity:0}}
+  @keyframes cross3c{0%,61%{opacity:0}66%,95%{opacity:1}100%{opacity:0}}
+</style>
+</helmet>
 
-<!-- HERO -->
-<section id="hero">
-  <div class="hero-img"></div>
-  <div class="hero-overlay"></div>
-  <div class="hero-warm-pulse"></div>
-  <div class="hero-cursor-light" id="cursorLight"></div>
-  <div class="hero-content">
-    <div class="hero-eyebrow">Complexe événementiel · Levallois</div>
-    <h1 class="hero-title">
-      <span class="hero-title-main">Salons d'Honneur</span>
-      <span class="hero-title-line"></span>
-      <span class="hero-title-sub">Beth Menahem — Levallois</span>
-    </h1>
-    <div class="hero-location">18, Rue Clément Bayard — 92300 Levallois</div>
-    <p class="hero-sub">Un espace d'exception de 320 m² au cœur de Levallois,<br>pour vos événements familiaux et communautaires.</p>
-    <div class="hero-btns">
-      <a href="#devis" class="btn-gold">Demander un devis</a>
-      <a href="#espaces" class="btn-outline">Découvrir les espaces</a>
+<div style="position:relative;width:100%;background:#F4EEE2">
+
+  <!-- NAV -->
+  <nav id="siteNav" style="position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:24px clamp(24px,5vw,64px);background:transparent;backdrop-filter:none;border-bottom:1px solid transparent;transition:all .5s cubic-bezier(.16,.7,.2,1)">
+    <a href="#top" style="display:flex;flex-direction:column;line-height:1.05">
+      <span style="font-family:'Cormorant Garamond',serif;font-size:21px;font-weight:600;letter-spacing:.5px;color:#ffffff">Salons d'Honneur</span>
+      <span style="font-family:'Jost',sans-serif;font-size:9.5px;font-weight:500;letter-spacing:4px;text-transform:uppercase;color:#E4C77E">Beth Menahem · Levallois</span>
+    </a>
+    <div style="display:flex;align-items:center;gap:38px">
+      <a href="#about" style="font-size:13px;font-weight:400;letter-spacing:.5px;color:#ffffff">Le Complexe</a>
+      <a href="#espaces" style="font-size:13px;font-weight:400;letter-spacing:.5px;color:#ffffff">Nos Espaces</a>
+      <a href="#services" style="font-size:13px;font-weight:400;letter-spacing:.5px;color:#ffffff">Événements</a>
+      <a href="#contact" style="font-size:13px;font-weight:400;letter-spacing:.5px;color:#ffffff">Contact</a>
+      <a href="#devis" style="display:inline-flex;align-items:center;gap:9px;font-size:12px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:#fff;background:#B58B45;padding:12px 22px;border-radius:1px" style-hover="background:#9C7634">Devis gratuit</a>
     </div>
-  </div>
-  <div class="hero-scroll" id="heroScroll">Découvrir</div>
-</section>
+  </nav>
 
-<!-- ABOUT -->
-<section id="about">
-  <div class="about-img-wrap">
-    <img src="/images/tables-salle.jpg" alt="Salons d'Honneur Beth Menahem — dressage de tables" loading="lazy">
-    <div class="about-badge">
-      <strong>320</strong>
-      <small>m² de<br>prestige</small>
-    </div>
-  </div>
-  <div>
-    <div class="sec-label">Le complexe</div>
-    <h2 class="sec-title">Un écrin d'élégance au cœur de <em>Levallois</em></h2>
-    <p class="sec-sub">Les Salons d'Honneur Beth Menahem se trouvent au sein du centre éducatif et culturel Beth Menahem - Levallois, appartenant au réseau des Institutions Sinaï.</p>
-    <p class="sec-sub" style="margin-top:.8rem">Cet élégant salon de 320 m² est complété par une mezzanine, un office de service, une chambre froide et un vestiaire avec hôtesse.</p>
-    <div class="about-specs">
-      <div class="spec"><div class="spec-val">320 m²</div><div class="spec-lbl">Surface des salons</div></div>
-      <div class="spec"><div class="spec-val">250 pers.</div><div class="spec-lbl">Capacité max (1 piste)</div></div>
-      <div class="spec"><div class="spec-val">120 m²</div><div class="spec-lbl">Mezzanine d'accueil</div></div>
-      <div class="spec"><div class="spec-val">59 places</div><div class="spec-lbl">Parking voiturier</div></div>
-    </div>
-    <div class="about-features">
-      <div class="about-feat">Office de service équipé</div>
-      <div class="about-feat">Chambre froide</div>
-      <div class="about-feat">Vestiaire avec hôtesse</div>
-      <div class="about-feat">Parking voiturier 59 places</div>
-      <div class="about-feat">Sonorisation professionnelle</div>
-      <div class="about-feat">Synagogue sur demande</div>
-    </div>
-  </div>
-</section>
-
-<!-- BROCHURE CTA -->
-<section id="brochure">
-  <div class="brochure-inner">
-    <div class="sec-label">Notre brochure</div>
-    <h2 class="sec-title">Découvrez nos <em>espaces</em> en images</h2>
-    <p>Consultez notre brochure complète pour visualiser les salons, la mezzanine, la piste de danse et toutes les configurations disponibles.</p>
-    <div class="brochure-btns">
-      <a href="/galerie" class="btn-gold">Voir la brochure</a>
-      <a href="#devis" class="btn-outline">Demander un devis</a>
-    </div>
-  </div>
-</section>
-
-<!-- ESPACES -->
-<section id="espaces">
-  <div class="sec-center">
-    <div class="sec-label">Nos espaces</div>
-    <h2 class="sec-title">Des salles pour chaque <em>occasion</em></h2>
-    <p class="sec-sub">Un complexe complet avec plusieurs espaces modulables, adaptés à la taille et au type de votre événement.</p>
-  </div>
-  <div class="espaces-grid">
-
-    <!-- SALLE PRINCIPALE — featured -->
-    <div class="espace-card featured">
-      <div class="espace-img">
-        <img src="/images/salle-honneur.jpg" alt="Salons d'Honneur 320 m²">
-        <div class="espace-surface">320 m²</div>
+  <!-- HERO -->
+  <header id="top" style="position:relative;width:100%;height:100vh;min-height:680px;overflow:hidden">
+    <img src="/images/hero-tables.jpg" alt="Salons d'Honneur Beth Menahem — tables dressées" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 60%;transform-origin:center;animation:kenBurns 24s ease-in-out infinite alternate">
+    <img src="/images/grande-salle.jpg" alt="Salons d'Honneur Beth Menahem — la grande salle dressée" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 55%;transform-origin:center;animation:cross3b 24s ease-in-out infinite,kenBurns 24s ease-in-out infinite alternate">
+    <img src="/images/salon-lumiere.jpg" alt="Salons d'Honneur Beth Menahem — salle en lumière" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform-origin:center;animation:cross3c 24s ease-in-out infinite,kenBurns 24s ease-in-out infinite alternate">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(20,16,11,0.378) 0%, rgba(20,16,11,0.231) 38%, rgba(20,16,11,0.441) 100%)"></div>
+    <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 24px">
+      <div style="display:inline-flex;align-items:center;gap:16px;margin-bottom:clamp(22px,3vw,38px);animation:heroRise 1s cubic-bezier(.16,.7,.2,1) both">
+        <span style="width:clamp(28px,5vw,52px);height:1px;background:linear-gradient(90deg,transparent,rgba(228,199,126,.85))"></span>
+        <span style="font-size:11px;font-weight:400;letter-spacing:5px;text-transform:uppercase;color:#E4C77E">Complexe événementiel · Levallois</span>
+        <span style="width:clamp(28px,5vw,52px);height:1px;background:linear-gradient(90deg,rgba(228,199,126,.85),transparent)"></span>
       </div>
-      <div class="espace-body">
-        <div class="espace-name">Salons d'Honneur</div>
-        <div class="espace-capacity">250 places assises · 1 ou 2 pistes de danse</div>
-        <p class="espace-desc">
-          Notre salle principale, véritable joyau architectural de 320 m². Plafond haut, colonnes en bois noble, lustres circulaires dorés et sol blanc immaculé. Elle peut accueillir jusqu'à 250 personnes avec une piste de danse, ou 220 personnes avec deux pistes.
-        </p>
-        <div class="espace-tags">
-          <span class="tag">Mariage</span>
-          <span class="tag">Bar / Bat Mitsva</span>
-          <span class="tag">Fiançailles</span>
-          <span class="tag">Soirée de gala</span>
-          <span class="tag">Séminaire</span>
+      <h1 style="margin:0;display:flex;flex-direction:column;align-items:center;gap:clamp(10px,1.6vw,20px)">
+        <span style="font-family:'Cinzel',serif;font-weight:500;font-size:clamp(20px,3.5vw,48px);letter-spacing:clamp(.14em,1.2vw,.32em);color:#FBF6EC;text-indent:clamp(.14em,1.2vw,.32em);text-shadow:0 2px 30px rgba(0,0,0,.35);animation:heroWipe 1.3s cubic-bezier(.16,.7,.2,1) .15s both">Salons d'Honneur</span>
+        <span style="width:clamp(56px,10vw,120px);height:1px;background:linear-gradient(90deg,transparent,#E4C77E,transparent);transform-origin:center;animation:lineGrow 1.1s cubic-bezier(.16,.7,.2,1) .55s both"></span>
+        <span style="font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;font-size:clamp(58px,11vw,150px);line-height:.86;color:#E4C77E;text-shadow:0 4px 50px rgba(120,80,20,.4);animation:blurIn 1.4s cubic-bezier(.16,.7,.2,1) .6s both">Beth Menahem</span>
+      </h1>
+      <p style="margin-top:clamp(26px,3vw,40px);font-size:clamp(15px,1.5vw,18px);font-weight:300;line-height:1.75;color:rgba(255,255,255,.88);max-width:44ch;text-wrap:pretty;animation:heroRise 1.1s cubic-bezier(.16,.7,.2,1) .95s both">Un écrin d'exception de 320 m² au cœur de Levallois pour vos événements familiaux et communautaires.</p>
+      <div style="display:flex;gap:16px;margin-top:clamp(32px,3.5vw,44px);flex-wrap:wrap;justify-content:center;animation:heroRise 1.1s cubic-bezier(.16,.7,.2,1) 1.15s both">
+        <a href="#devis" style="display:inline-flex;align-items:center;gap:10px;font-size:12.5px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#2A2117;background:#fff;padding:17px 34px;border-radius:1px;transition:background .35s" style-hover="background:#E4C77E">Demander un devis</a>
+        <a href="#espaces" style="display:inline-flex;align-items:center;gap:10px;font-size:12.5px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#fff;border:1px solid rgba(255,255,255,.55);padding:17px 34px;border-radius:1px;transition:background .35s" style-hover="background:rgba(255,255,255,.12)">Découvrir les espaces</a>
+      </div>
+    </div>
+    <div style="position:absolute;bottom:34px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;animation:heroRise 1.2s ease 1.5s both">
+      <span style="font-size:9.5px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.7);animation:softPulse 2.6s ease-in-out infinite">Découvrir</span>
+      <span style="width:1px;height:46px;background:linear-gradient(rgba(255,255,255,.7),rgba(255,255,255,0))"></span>
+    </div>
+  </header>
+
+  <!-- ABOUT -->
+  <section id="about" style="position:relative;padding:clamp(80px,11vw,150px) clamp(24px,7vw,120px);background:#F4EEE2">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(40px,6vw,96px);align-items:center;max-width:1280px;margin:0 auto">
+      <div class="__rv" style="position:relative">
+        <img src="/images/salon-lumiere.jpg" alt="Salons d'Honneur 320 m²" style="width:100%;height:clamp(380px,46vw,580px);object-fit:cover;border-radius:2px">
+        <div style="position:absolute;bottom:-30px;right:-18px;background:#B58B45;color:#fff;padding:26px 30px;text-align:center;border-radius:2px;box-shadow:0 24px 60px -22px rgba(42,33,23,.5)">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:46px;font-weight:500;line-height:1">320</div>
+          <div style="font-size:10px;letter-spacing:3px;text-transform:uppercase;margin-top:4px">m² de prestige</div>
+        </div>
+      </div>
+      <div class="__rv">
+        <div style="display:inline-flex;align-items:center;gap:12px;margin-bottom:22px">
+          <span style="width:28px;height:1px;background:#B58B45"></span>
+          <span style="font-size:11px;font-weight:500;letter-spacing:3.5px;text-transform:uppercase;color:#B58B45">Le complexe</span>
+        </div>
+        <h2 style="font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(32px,4vw,52px);line-height:1.08;letter-spacing:.3px">Un écrin d'élégance au cœur de <span style="font-style:italic;color:#B58B45">Levallois</span></h2>
+        <p style="margin-top:24px;font-size:15.5px;font-weight:300;line-height:1.85;color:#5C5345;max-width:54ch;text-wrap:pretty">Les Salons d'Honneur Beth Menahem se trouvent au sein du centre éducatif et culturel Beth Menahem — Levallois, appartenant au réseau des Institutions Sinaï.</p>
+        <p style="margin-top:16px;font-size:15.5px;font-weight:300;line-height:1.85;color:#5C5345;max-width:54ch;text-wrap:pretty">Cet élégant salon de 320 m² est complété par une mezzanine, un office de service, une chambre froide et un vestiaire avec hôtesse.</p>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1px;margin-top:38px;background:rgba(42,33,23,.1);border:1px solid rgba(42,33,23,.1);border-radius:2px;overflow:hidden">
+          <div style="background:#FBF7EF;padding:22px 24px">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:500;color:#B58B45;line-height:1">320 m²</div>
+            <div style="font-size:11.5px;letter-spacing:1px;color:#7A7163;margin-top:4px">Surface des salons</div>
+          </div>
+          <div style="background:#FBF7EF;padding:22px 24px">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:500;color:#B58B45;line-height:1">250 pers.</div>
+            <div style="font-size:11.5px;letter-spacing:1px;color:#7A7163;margin-top:4px">Capacité max (1 piste)</div>
+          </div>
+          <div style="background:#FBF7EF;padding:22px 24px">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:500;color:#B58B45;line-height:1">120 m²</div>
+            <div style="font-size:11.5px;letter-spacing:1px;color:#7A7163;margin-top:4px">Mezzanine d'accueil</div>
+          </div>
+          <div style="background:#FBF7EF;padding:22px 24px">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:500;color:#B58B45;line-height:1">59 pl.</div>
+            <div style="font-size:11.5px;letter-spacing:1px;color:#7A7163;margin-top:4px">Parking voiturier</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:26px">
+          <span style="font-size:12px;letter-spacing:.5px;color:#5C5345;border:1px solid rgba(42,33,23,.16);padding:7px 15px;border-radius:40px">Office de service équipé</span>
+          <span style="font-size:12px;letter-spacing:.5px;color:#5C5345;border:1px solid rgba(42,33,23,.16);padding:7px 15px;border-radius:40px">Chambre froide</span>
+          <span style="font-size:12px;letter-spacing:.5px;color:#5C5345;border:1px solid rgba(42,33,23,.16);padding:7px 15px;border-radius:40px">Sonorisation professionnelle</span>
+          <span style="font-size:12px;letter-spacing:.5px;color:#5C5345;border:1px solid rgba(42,33,23,.16);padding:7px 15px;border-radius:40px">Synagogue sur demande</span>
         </div>
       </div>
     </div>
+  </section>
 
-    <!-- MEZZANINE -->
-    <div class="espace-card">
-      <div class="espace-img">
-        <img src="/images/mezzanine.jpg" alt="Mezzanine 120 m²">
-        <div class="espace-surface">120 m²</div>
+  <!-- BROCHURE (dark band) -->
+  <section style="position:relative;padding:clamp(72px,9vw,120px) clamp(24px,7vw,120px);background:#221C14;overflow:hidden">
+    <img src="/images/salle-polyvalente.jpg" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.16">
+    <div style="position:absolute;inset:0;background:linear-gradient(90deg,#221C14 28%,rgba(34,28,20,.55))"></div>
+    <div class="__rv" style="position:relative;max-width:1280px;margin:0 auto;display:flex;flex-direction:column;align-items:flex-start">
+      <div style="display:inline-flex;align-items:center;gap:12px;margin-bottom:22px">
+        <span style="width:28px;height:1px;background:#E4C77E"></span>
+        <span style="font-size:11px;font-weight:500;letter-spacing:3.5px;text-transform:uppercase;color:#E4C77E">Notre brochure</span>
       </div>
-      <div class="espace-body">
-        <div class="espace-name">Mezzanine</div>
-        <div class="espace-capacity">Poste d'accueil · jusqu'à 50 personnes</div>
-        <p class="espace-desc">La mezzanine offre une vue plongeante sur les salons. Elle sert de poste d'accueil avec stand de boissons soft et crudités, pour accueillir vos invités à leur arrivée dans une ambiance sobre et élégante.</p>
-        <div class="espace-tags">
-          <span class="tag">Accueil</span>
-          <span class="tag">Cocktail d'arrivée</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- SALLE POLYVALENTE -->
-    <div class="espace-card">
-      <div class="espace-img">
-        <img src="/images/conference-buffet.jpg" alt="Salle Polyvalente — Buffet d'accueil">
-        <div class="espace-surface">Option</div>
-      </div>
-      <div class="espace-body">
-        <div class="espace-name">Salle Polyvalente</div>
-        <div class="espace-capacity">Buffet d'accueil · jusqu'à 150 personnes</div>
-        <p class="espace-desc">Espace idéal pour organiser un buffet d'accueil avant votre événement principal. Peut accueillir jusqu'à 150 personnes pour un cocktail ou un Kiddouch d'entrée.</p>
-        <div class="espace-tags">
-          <span class="tag">Kiddouch</span>
-          <span class="tag">Buffet</span>
-          <span class="tag">Brith Mila</span>
-        </div>
+      <h2 style="font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(30px,4.2vw,54px);line-height:1.08;color:#FAF6EC;max-width:18ch">Découvrez nos <span style="font-style:italic;color:#E4C77E">espaces</span> en images</h2>
+      <p style="margin-top:22px;font-size:15.5px;font-weight:300;line-height:1.8;color:rgba(250,246,236,.72);max-width:52ch;text-wrap:pretty">Consultez notre brochure complète pour visualiser les salons, la mezzanine, la piste de danse et toutes les configurations disponibles.</p>
+      <div style="display:flex;gap:16px;margin-top:38px;flex-wrap:wrap">
+        <a href="https://crmsalons-production.up.railway.app/galerie" style="display:inline-flex;align-items:center;gap:10px;font-size:12.5px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#221C14;background:#E4C77E;padding:16px 32px;border-radius:1px" style-hover="background:#fff">Voir la brochure</a>
+        <a href="#devis" style="display:inline-flex;align-items:center;gap:10px;font-size:12.5px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#FAF6EC;border:1px solid rgba(250,246,236,.4);padding:16px 32px;border-radius:1px" style-hover="background:rgba(255,255,255,.08)">Demander un devis</a>
       </div>
     </div>
+  </section>
 
-  </div>
-</section>
-
-<!-- OPTIONS -->
-<section id="options">
-  <div class="sec-center">
-    <div class="sec-label">Inclus & Options</div>
-    <h2 class="sec-title">Tout ce qu'il faut pour votre <em>événement</em></h2>
-    <p class="sec-sub">Un ensemble de services pensés pour que vous puissiez vous concentrer sur l'essentiel : profiter de votre fête.</p>
-  </div>
-  <div class="options-grid">
-    <div class="opt-card">
-      <div class="opt-icon">🎩</div>
-      <div class="opt-name">Vestiaire</div>
-      <p class="opt-desc">Un espace dédié au vestiaire avec une hôtesse pour accueillir vos invités.</p>
-      <span class="opt-badge inclus">Inclus</span>
-    </div>
-    <div class="opt-card">
-      <div class="opt-icon">🕍</div>
-      <div class="opt-name">Synagogue</div>
-      <p class="opt-desc">Une synagogue de 90 m² avec 90 places assises, disponible pour vos cérémonies religieuses.</p>
-      <span class="opt-badge inclus">Gratuit sur demande</span>
-    </div>
-    <div class="opt-card">
-      <div class="opt-icon">🚗</div>
-      <div class="opt-name">Voiturier</div>
-      <p class="opt-desc">Un parking privé de 59 places accessible uniquement via notre service voiturier.</p>
-      <span class="opt-badge option">Sur option</span>
-    </div>
-    <div class="opt-card">
-      <div class="opt-icon">🍽️</div>
-      <div class="opt-name">Office de service</div>
-      <p class="opt-desc">Un office de service complet équipé pour vos traiteurs.</p>
-      <span class="opt-badge inclus">Inclus</span>
-    </div>
-  </div>
-</section>
-
-<!-- SERVICES -->
-<section id="services">
-  <div class="sec-center">
-    <div class="sec-label">Nos événements</div>
-    <h2 class="sec-title">Chaque moment <em>mérite</em> l'exception</h2>
-    <p class="sec-sub">Nous accompagnons les familles pour tous leurs événements religieux, familiaux et communautaires.</p>
-  </div>
-  <div class="services-grid">
-    <div class="svc"><div class="svc-icon">💍</div><div class="svc-name">Mariages</div><p class="svc-text">Houppa et réception dans un cadre d'exception.</p></div>
-    <div class="svc"><div class="svc-icon">✡️</div><div class="svc-name">Bar & Bat Mitsva</div><p class="svc-text">Une journée mémorable pour votre enfant.</p></div>
-    <div class="svc"><div class="svc-icon">💐</div><div class="svc-name">Fiançailles</div><p class="svc-text">Célébrez vos fiançailles avec élégance.</p></div>
-    <div class="svc"><div class="svc-icon">👶</div><div class="svc-name">Brith Mila</div><p class="svc-text">Accueil chaleureux pour les cérémonies de naissance.</p></div>
-    <div class="svc"><div class="svc-icon">🥂</div><div class="svc-name">Kiddouch</div><p class="svc-text">Réceptions et buffets pour toutes les occasions.</p></div>
-    <div class="svc"><div class="svc-icon">🏢</div><div class="svc-name">Séminaires</div><p class="svc-text">Espaces équipés pour vos événements professionnels.</p></div>
-  </div>
-</section>
-
-<!-- DEVIS -->
-<section id="devis">
-  <div class="sec-center">
-    <div class="sec-label">Devis gratuit</div>
-    <h2 class="sec-title">Demandez votre <em>devis</em></h2>
-    <p class="sec-sub">Remplissez le formulaire ci-dessous. Notre équipe vous recontactera dans les 24h.</p>
-  </div>
-  <div class="form-wrap">
-    <form id="devisForm">
-      <div class="form-grid">
-        <div class="fg">
-          <label>Nom <span class="req">*</span></label>
-          <input type="text" name="nom" placeholder="Votre nom de famille" required>
+  <!-- ESPACES -->
+  <section id="espaces" style="padding:clamp(80px,11vw,150px) clamp(24px,7vw,120px);background:#F4EEE2">
+    <div style="max-width:1280px;margin:0 auto">
+      <div class="__rv" style="text-align:center;max-width:640px;margin:0 auto 60px">
+        <div style="display:inline-flex;align-items:center;gap:12px;margin-bottom:20px">
+          <span style="width:28px;height:1px;background:#B58B45"></span>
+          <span style="font-size:11px;font-weight:500;letter-spacing:3.5px;text-transform:uppercase;color:#B58B45">Nos espaces</span>
+          <span style="width:28px;height:1px;background:#B58B45"></span>
         </div>
-        <div class="fg">
-          <label>Prénom <span class="req">*</span></label>
-          <input type="text" name="prenom" placeholder="Votre prénom" required>
-        </div>
-        <div class="fg">
-          <label>Téléphone <span class="req">*</span></label>
-          <input type="tel" name="telephone" placeholder="07 49 54 97 90" required>
-        </div>
-        <div class="fg">
-          <label>Email <span class="req">*</span></label>
-          <input type="email" name="email" placeholder="votre@email.com" required>
-        </div>
-        <div class="fg">
-          <label>Type d'événement <span class="req">*</span></label>
-          <select name="type_evenement" required>
-            <option value="" disabled selected>Sélectionnez votre événement…</option>
-            <option>Bar Mitsva / Bat Mitsva</option>
-            <option>Mariage</option>
-            <option>Fiançailles</option>
-            <option>Brith Mila</option>
-            <option>Anniversaire</option>
-            <option>Kiddouch / Réception</option>
-            <option>Séminaire / Conférence</option>
-            <option>Autre</option>
-          </select>
-        </div>
-        <div class="fg">
-          <label>Date souhaitée <span class="req">*</span></label>
-          <input type="date" name="date_evenement" required>
-        </div>
-        <div class="fg form-full">
-          <label>Plage horaire <span class="req">*</span></label>
-          <select name="plage_horaire" required>
-            <option value="" disabled selected>Sélectionnez un créneau…</option>
-            <option>Matinée (8h00 – 12h00)</option>
-            <option>Après-midi (12h00 – 17h00)</option>
-            <option>Soirée (18h00 – 00h00)</option>
-            <option>Chabbat (vendredi soir & Chabbat midi)</option>
-            <option>Journée complète</option>
-          </select>
-        </div>
-        <div class="fg form-full">
-          <label>Message <span style="color:var(--muted);font-weight:400;font-size:.72rem;text-transform:none">(optionnel — nombre d'invités, demandes particulières…)</span></label>
-          <textarea name="message" placeholder="Indiquez le nombre d'invités approximatif, si vous souhaitez la synagogue, le voiturier, la salle polyvalente…"></textarea>
-        </div>
+        <h2 style="font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(32px,4.4vw,54px);line-height:1.08">Des salles pour chaque <span style="font-style:italic;color:#B58B45">occasion</span></h2>
+        <p style="margin-top:18px;font-size:15.5px;font-weight:300;line-height:1.8;color:#5C5345;text-wrap:pretty">Un complexe complet avec plusieurs espaces modulables, adaptés à la taille et au type de votre événement.</p>
       </div>
-      <button type="submit" class="form-btn" id="submitBtn">Envoyer ma demande de devis</button>
-      <div class="form-msg" id="formMsg"></div>
-    </form>
-  </div>
-</section>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:28px">
 
-<!-- CONTACT -->
-<section id="contact">
-  <div>
-    <div class="sec-label">Nous trouver</div>
-    <h2 class="sec-title">Venez nous <em>rencontrer</em></h2>
-    <p class="sec-sub">Notre équipe est disponible pour vous accueillir et organiser une visite des salons sur rendez-vous.</p>
-    <div class="contact-list">
-      <div class="contact-item">
-        <div class="contact-ico">📍</div>
-        <div class="contact-txt">
-          <strong>Adresse</strong>
-          <span>18, Rue Clément Bayard<br>92300 Levallois-Perret</span>
-        </div>
+        <article class="__rv" style="background:#FBF7EF;border:1px solid rgba(42,33,23,.08);border-radius:3px;overflow:hidden;display:flex;flex-direction:column">
+          <div style="position:relative;height:250px;overflow:hidden">
+            <img src="/images/salon-lumiere.jpg" alt="Salons d'Honneur 320 m²" style="width:100%;height:100%;object-fit:cover">
+            <span style="position:absolute;top:16px;left:16px;background:rgba(34,28,20,.82);color:#E4C77E;font-size:11px;font-weight:500;letter-spacing:2px;padding:7px 13px;border-radius:1px">320 m²</span>
+          </div>
+          <div style="padding:30px 28px 32px;display:flex;flex-direction:column;flex:1">
+            <h3 style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;line-height:1.1">Salons d'Honneur</h3>
+            <div style="font-size:12px;letter-spacing:1px;color:#B58B45;margin-top:6px;text-transform:uppercase">250 places · 1 ou 2 pistes de danse</div>
+            <p style="margin-top:16px;font-size:14px;font-weight:300;line-height:1.75;color:#5C5345;flex:1;text-wrap:pretty">Notre salle principale, véritable joyau architectural. Plafond haut, colonnes en bois noble, lustres circulaires dorés et sol blanc immaculé. Jusqu'à 250 personnes avec une piste, 220 avec deux.</p>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:20px">
+              <span style="font-size:11px;letter-spacing:.5px;color:#7A7163;background:#F1E9D9;padding:5px 11px;border-radius:30px">Mariage</span>
+              <span style="font-size:11px;letter-spacing:.5px;color:#7A7163;background:#F1E9D9;padding:5px 11px;border-radius:30px">Bar / Bat Mitsva</span>
+              <span style="font-size:11px;letter-spacing:.5px;color:#7A7163;background:#F1E9D9;padding:5px 11px;border-radius:30px">Gala</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="__rv" style="background:#FBF7EF;border:1px solid rgba(42,33,23,.08);border-radius:3px;overflow:hidden;display:flex;flex-direction:column">
+          <div style="position:relative;height:250px;overflow:hidden">
+            <img src="/images/mezzanine.jpg" alt="Mezzanine 120 m²" style="width:100%;height:100%;object-fit:cover">
+            <span style="position:absolute;top:16px;left:16px;background:rgba(34,28,20,.82);color:#E4C77E;font-size:11px;font-weight:500;letter-spacing:2px;padding:7px 13px;border-radius:1px">120 m²</span>
+          </div>
+          <div style="padding:30px 28px 32px;display:flex;flex-direction:column;flex:1">
+            <h3 style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;line-height:1.1">Mezzanine</h3>
+            <div style="font-size:12px;letter-spacing:1px;color:#B58B45;margin-top:6px;text-transform:uppercase">Poste d'accueil · jusqu'à 50 pers.</div>
+            <p style="margin-top:16px;font-size:14px;font-weight:300;line-height:1.75;color:#5C5345;flex:1;text-wrap:pretty">La mezzanine offre une vue plongeante sur les salons. Elle sert de poste d'accueil avec stand de boissons soft et crudités, pour recevoir vos invités à leur arrivée dans une ambiance sobre et élégante.</p>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:20px">
+              <span style="font-size:11px;letter-spacing:.5px;color:#7A7163;background:#F1E9D9;padding:5px 11px;border-radius:30px">Accueil</span>
+              <span style="font-size:11px;letter-spacing:.5px;color:#7A7163;background:#F1E9D9;padding:5px 11px;border-radius:30px">Cocktail d'arrivée</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="__rv" style="background:#FBF7EF;border:1px solid rgba(42,33,23,.08);border-radius:3px;overflow:hidden;display:flex;flex-direction:column">
+          <div style="position:relative;height:250px;overflow:hidden">
+            <img src="/images/salle-polyvalente.jpg" alt="Salle polyvalente — buffet d'accueil" style="width:100%;height:100%;object-fit:cover">
+            <span style="position:absolute;top:16px;left:16px;background:rgba(34,28,20,.82);color:#E4C77E;font-size:11px;font-weight:500;letter-spacing:2px;padding:7px 13px;border-radius:1px">Option</span>
+          </div>
+          <div style="padding:30px 28px 32px;display:flex;flex-direction:column;flex:1">
+            <h3 style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;line-height:1.1">Salle Polyvalente</h3>
+            <div style="font-size:12px;letter-spacing:1px;color:#B58B45;margin-top:6px;text-transform:uppercase">Buffet d'accueil · jusqu'à 150 pers.</div>
+            <p style="margin-top:16px;font-size:14px;font-weight:300;line-height:1.75;color:#5C5345;flex:1;text-wrap:pretty">Espace idéal pour organiser un buffet d'accueil avant votre événement principal. Peut accueillir jusqu'à 150 personnes pour un cocktail ou un Kiddouch d'entrée.</p>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:20px">
+              <span style="font-size:11px;letter-spacing:.5px;color:#7A7163;background:#F1E9D9;padding:5px 11px;border-radius:30px">Kiddouch</span>
+              <span style="font-size:11px;letter-spacing:.5px;color:#7A7163;background:#F1E9D9;padding:5px 11px;border-radius:30px">Buffet</span>
+              <span style="font-size:11px;letter-spacing:.5px;color:#7A7163;background:#F1E9D9;padding:5px 11px;border-radius:30px">Brith Mila</span>
+            </div>
+          </div>
+        </article>
+
       </div>
-      <div class="contact-item">
-        <div class="contact-ico">📞</div>
-        <div class="contact-txt">
-          <strong>Téléphone</strong>
-          <span><a href="tel:0749549790">07 49 54 97 90</a></span>
+    </div>
+  </section>
+
+  <!-- SERVICES INCLUS -->
+  <section style="padding:clamp(80px,11vw,140px) clamp(24px,7vw,120px);background:#EDE5D5">
+    <div style="max-width:1280px;margin:0 auto">
+      <div class="__rv" style="text-align:center;max-width:640px;margin:0 auto 56px">
+        <div style="display:inline-flex;align-items:center;gap:12px;margin-bottom:20px">
+          <span style="width:28px;height:1px;background:#B58B45"></span>
+          <span style="font-size:11px;font-weight:500;letter-spacing:3.5px;text-transform:uppercase;color:#B58B45">Inclus &amp; options</span>
+          <span style="width:28px;height:1px;background:#B58B45"></span>
         </div>
+        <h2 style="font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(32px,4.4vw,54px);line-height:1.08">Tout ce qu'il faut pour votre <span style="font-style:italic;color:#B58B45">événement</span></h2>
+        <p style="margin-top:18px;font-size:15.5px;font-weight:300;line-height:1.8;color:#5C5345;text-wrap:pretty">Un ensemble de services pensés pour que vous puissiez vous concentrer sur l'essentiel : profiter de votre fête.</p>
       </div>
-      <div class="contact-item">
-        <div class="contact-ico">📧</div>
-        <div class="contact-txt">
-          <strong>Email</strong>
-          <span><a href="mailto:Salons@bethmenahem-lis.com">Salons@bethmenahem-lis.com</a></span>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(42,33,23,.1);border:1px solid rgba(42,33,23,.1);border-radius:3px;overflow:hidden">
+        <div style="background:#FBF7EF;padding:38px 30px;display:flex;flex-direction:column">
+          <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:22px;color:#B58B45">01</div>
+          <h3 style="font-family:'Cormorant Garamond',serif;font-size:25px;font-weight:600;margin-top:14px">Vestiaire</h3>
+          <p style="margin-top:10px;font-size:13.5px;font-weight:300;line-height:1.7;color:#5C5345;flex:1">Un espace dédié avec hôtesse pour accueillir vos invités.</p>
+          <span style="margin-top:18px;align-self:flex-start;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:#B58B45;border:1px solid #B58B45;padding:5px 12px;border-radius:1px">Inclus</span>
+        </div>
+        <div style="background:#FBF7EF;padding:38px 30px;display:flex;flex-direction:column">
+          <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:22px;color:#B58B45">02</div>
+          <h3 style="font-family:'Cormorant Garamond',serif;font-size:25px;font-weight:600;margin-top:14px">Synagogue</h3>
+          <p style="margin-top:10px;font-size:13.5px;font-weight:300;line-height:1.7;color:#5C5345;flex:1">Une synagogue de 90 m² et 90 places, pour vos cérémonies religieuses.</p>
+          <span style="margin-top:18px;align-self:flex-start;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:#B58B45;border:1px solid #B58B45;padding:5px 12px;border-radius:1px">Gratuit sur demande</span>
+        </div>
+        <div style="background:#FBF7EF;padding:38px 30px;display:flex;flex-direction:column">
+          <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:22px;color:#B58B45">03</div>
+          <h3 style="font-family:'Cormorant Garamond',serif;font-size:25px;font-weight:600;margin-top:14px">Voiturier</h3>
+          <p style="margin-top:10px;font-size:13.5px;font-weight:300;line-height:1.7;color:#5C5345;flex:1">Un parking privé de 59 places, accessible via notre service voiturier.</p>
+          <span style="margin-top:18px;align-self:flex-start;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:#B58B45;border:1px solid #B58B45;padding:5px 12px;border-radius:1px">Sur option</span>
+        </div>
+        <div style="background:#FBF7EF;padding:38px 30px;display:flex;flex-direction:column">
+          <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:22px;color:#B58B45">04</div>
+          <h3 style="font-family:'Cormorant Garamond',serif;font-size:25px;font-weight:600;margin-top:14px">Office de service</h3>
+          <p style="margin-top:10px;font-size:13.5px;font-weight:300;line-height:1.7;color:#5C5345;flex:1">Un office complet et équipé, à disposition de vos traiteurs.</p>
+          <span style="margin-top:18px;align-self:flex-start;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:#B58B45;border:1px solid #B58B45;padding:5px 12px;border-radius:1px">Inclus</span>
         </div>
       </div>
     </div>
-    <div class="contact-sinai" style="margin-top:2rem">
-      <p><strong>Institutions Sinaï</strong> — Les Salons d'Honneur Beth Menahem font partie du centre éducatif et culturel Beth Menahem - Levallois, appartenant au réseau des Institutions Sinaï.</p>
-    </div>
-  </div>
-  <div>
-    <div class="contact-map-wrap">
-      <iframe
-        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2623.6!2d2.2877!3d48.8963!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2s18%20Rue%20Cl%C3%A9ment%20Bayard%2C%2092300%20Levallois-Perret!5e0!3m2!1sfr!2sfr!4v1"
-        allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
-        title="Salons d'Honneur Beth Menahem — 18 Rue Clément Bayard, Levallois">
-      </iframe>
-    </div>
-  </div>
-</section>
+  </section>
 
-<footer>
-  <div class="footer-logo">
-    Salons d'Honneur Beth Menahem
-    <small>Levallois · Institutions Sinaï</small>
-  </div>
-  <div class="footer-copy">© 2024 Beth Menahem — 18 Rue Clément Bayard, 92300 Levallois</div>
-</footer>
+  <!-- EVENEMENTS -->
+  <section id="services" style="padding:clamp(80px,11vw,150px) clamp(24px,7vw,120px);background:#F4EEE2">
+    <div style="max-width:1180px;margin:0 auto">
+      <div class="__rv" style="text-align:center;max-width:640px;margin:0 auto 56px">
+        <div style="display:inline-flex;align-items:center;gap:12px;margin-bottom:20px">
+          <span style="width:28px;height:1px;background:#B58B45"></span>
+          <span style="font-size:11px;font-weight:500;letter-spacing:3.5px;text-transform:uppercase;color:#B58B45">Nos événements</span>
+          <span style="width:28px;height:1px;background:#B58B45"></span>
+        </div>
+        <h2 style="font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(32px,4.4vw,54px);line-height:1.08">Chaque moment <span style="font-style:italic;color:#B58B45">mérite</span> l'exception</h2>
+        <p style="margin-top:18px;font-size:15.5px;font-weight:300;line-height:1.8;color:#5C5345;text-wrap:pretty">Nous accompagnons les familles pour tous leurs événements religieux, familiaux et communautaires.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(42,33,23,.1);border:1px solid rgba(42,33,23,.1);border-radius:3px;overflow:hidden">
+        <div style="background:#FBF7EF;padding:40px 34px" style-hover="background:#fff">
+          <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:20px;color:#B58B45">i.</div>
+          <h3 style="font-family:'Cormorant Garamond',serif;font-size:27px;font-weight:600;margin-top:8px">Mariages</h3>
+          <p style="margin-top:10px;font-size:13.5px;font-weight:300;line-height:1.7;color:#5C5345">Houppa et réception dans un cadre d'exception.</p>
+        </div>
+        <div style="background:#FBF7EF;padding:40px 34px" style-hover="background:#fff">
+          <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:20px;color:#B58B45">ii.</div>
+          <h3 style="font-family:'Cormorant Garamond',serif;font-size:27px;font-weight:600;margin-top:8px">Bar &amp; Bat Mitsva</h3>
+          <p style="margin-top:10px;font-size:13.5px;font-weight:300;line-height:1.7;color:#5C5345">Une journée mémorable pour votre enfant.</p>
+        </div>
+        <div style="background:#FBF7EF;padding:40px 34px" style-hover="background:#fff">
+          <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:20px;color:#B58B45">iii.</div>
+          <h3 style="font-family:'Cormorant Garamond',serif;font-size:27px;font-weight:600;margin-top:8px">Fiançailles</h3>
+          <p style="margin-top:10px;font-size:13.5px;font-weight:300;line-height:1.7;color:#5C5345">Célébrez vos fiançailles avec élégance.</p>
+        </div>
+        <div style="background:#FBF7EF;padding:40px 34px" style-hover="background:#fff">
+          <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:20px;color:#B58B45">iv.</div>
+          <h3 style="font-family:'Cormorant Garamond',serif;font-size:27px;font-weight:600;margin-top:8px">Brith Mila</h3>
+          <p style="margin-top:10px;font-size:13.5px;font-weight:300;line-height:1.7;color:#5C5345">Accueil chaleureux pour les cérémonies de naissance.</p>
+        </div>
+        <div style="background:#FBF7EF;padding:40px 34px" style-hover="background:#fff">
+          <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:20px;color:#B58B45">v.</div>
+          <h3 style="font-family:'Cormorant Garamond',serif;font-size:27px;font-weight:600;margin-top:8px">Kiddouch</h3>
+          <p style="margin-top:10px;font-size:13.5px;font-weight:300;line-height:1.7;color:#5C5345">Réceptions et buffets pour toutes les occasions.</p>
+        </div>
+        <div style="background:#FBF7EF;padding:40px 34px" style-hover="background:#fff">
+          <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:20px;color:#B58B45">vi.</div>
+          <h3 style="font-family:'Cormorant Garamond',serif;font-size:27px;font-weight:600;margin-top:8px">Séminaires</h3>
+          <p style="margin-top:10px;font-size:13.5px;font-weight:300;line-height:1.7;color:#5C5345">Espaces équipés pour vos événements professionnels.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
+  <!-- DEVIS -->
+  <section id="devis" style="position:relative;padding:clamp(80px,11vw,150px) clamp(24px,7vw,120px);background:#221C14;overflow:hidden">
+    <div style="position:absolute;inset:0;background:radial-gradient(120% 90% at 80% 0%,rgba(181,139,69,.18),transparent 60%)"></div>
+    <div style="position:relative;max-width:1080px;margin:0 auto;display:grid;grid-template-columns:0.85fr 1.15fr;gap:clamp(40px,6vw,80px);align-items:start">
+      <div class="__rv">
+        <div style="display:inline-flex;align-items:center;gap:12px;margin-bottom:20px">
+          <span style="width:28px;height:1px;background:#E4C77E"></span>
+          <span style="font-size:11px;font-weight:500;letter-spacing:3.5px;text-transform:uppercase;color:#E4C77E">Devis gratuit</span>
+        </div>
+        <h2 style="font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(32px,4.2vw,52px);line-height:1.08;color:#FAF6EC">Demandez votre <span style="font-style:italic;color:#E4C77E">devis</span></h2>
+        <p style="margin-top:20px;font-size:15px;font-weight:300;line-height:1.85;color:rgba(250,246,236,.72);max-width:40ch;text-wrap:pretty">Remplissez le formulaire. Notre équipe vous recontactera dans les 24 heures pour organiser une visite et affiner votre projet.</p>
+        <div style="margin-top:38px;display:flex;flex-direction:column;gap:18px">
+          <a href="tel:0749549790" style="display:flex;align-items:center;gap:14px;color:#FAF6EC" style-hover="color:#E4C77E">
+            <span style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:18px;color:#E4C77E;width:26px">→</span>
+            <span style="font-size:14.5px;letter-spacing:.5px">07 49 54 97 90</span>
+          </a>
+          <a href="mailto:Salons@bethmenahem-lis.com" style="display:flex;align-items:center;gap:14px;color:#FAF6EC" style-hover="color:#E4C77E">
+            <span style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:18px;color:#E4C77E;width:26px">→</span>
+            <span style="font-size:14.5px;letter-spacing:.5px">Salons@bethmenahem-lis.com</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="__rv" style="background:#FBF7EF;border-radius:4px;padding:clamp(28px,3.5vw,48px);box-shadow:0 40px 90px -40px rgba(0,0,0,.6)">
+        <div id="devisSuccess" style="display:none">
+          <div style="text-align:center;padding:36px 8px">
+            <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:54px;color:#B58B45;line-height:1">Merci</div>
+            <h3 style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;margin-top:14px">Votre demande est envoyée</h3>
+            <p style="margin-top:14px;font-size:14.5px;font-weight:300;line-height:1.75;color:#5C5345;max-width:38ch;margin-inline:auto;text-wrap:pretty">Notre équipe vous recontactera dans les 24 heures. À très bientôt aux Salons d'Honneur Beth Menahem.</p>
+            <button type="button" onclick="resetDevis()" style="margin-top:28px;font-size:11.5px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#B58B45;background:none;border:1px solid #B58B45;padding:13px 26px;border-radius:1px;cursor:pointer">Nouvelle demande</button>
+          </div>
+        </div>
+        <div id="devisFormWrap">
+          <form id="devisForm" style="display:flex;flex-direction:column;gap:18px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <label style="display:flex;flex-direction:column;gap:7px">
+                <span style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:#8A8070;font-weight:500">Nom *</span>
+                <input name="nom"  required="" style="font-size:14px;color:#2A2117;background:#fff;border:1px solid rgba(42,33,23,.18);padding:12px 14px;border-radius:2px" style-focus="border-color:#B58B45">
+              </label>
+              <label style="display:flex;flex-direction:column;gap:7px">
+                <span style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:#8A8070;font-weight:500">Prénom *</span>
+                <input name="prenom"  required="" style="font-size:14px;color:#2A2117;background:#fff;border:1px solid rgba(42,33,23,.18);padding:12px 14px;border-radius:2px" style-focus="border-color:#B58B45">
+              </label>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <label style="display:flex;flex-direction:column;gap:7px">
+                <span style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:#8A8070;font-weight:500">Téléphone *</span>
+                <input name="telephone"  type="tel" required="" style="font-size:14px;color:#2A2117;background:#fff;border:1px solid rgba(42,33,23,.18);padding:12px 14px;border-radius:2px" style-focus="border-color:#B58B45">
+              </label>
+              <label style="display:flex;flex-direction:column;gap:7px">
+                <span style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:#8A8070;font-weight:500">Email *</span>
+                <input name="email"  type="email" required="" style="font-size:14px;color:#2A2117;background:#fff;border:1px solid rgba(42,33,23,.18);padding:12px 14px;border-radius:2px" style-focus="border-color:#B58B45">
+              </label>
+            </div>
+            <label style="display:flex;flex-direction:column;gap:7px">
+              <span style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:#8A8070;font-weight:500">Type d'événement *</span>
+              <select name="type_evenement"  required="" style="font-size:14px;color:#2A2117;background:#fff;border:1px solid rgba(42,33,23,.18);padding:12px 14px;border-radius:2px;appearance:none" style-focus="border-color:#B58B45">
+                <option value="">Sélectionnez votre événement…</option>
+                <option>Bar Mitsva / Bat Mitsva</option>
+                <option>Mariage</option>
+                <option>Fiançailles</option>
+                <option>Brith Mila</option>
+                <option>Anniversaire</option>
+                <option>Kiddouch / Réception</option>
+                <option>Séminaire / Conférence</option>
+                <option>Autre</option>
+              </select>
+            </label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <label style="display:flex;flex-direction:column;gap:7px">
+                <span style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:#8A8070;font-weight:500">Date souhaitée *</span>
+                <input name="date_evenement"  type="date" required="" style="font-size:14px;color:#2A2117;background:#fff;border:1px solid rgba(42,33,23,.18);padding:12px 14px;border-radius:2px" style-focus="border-color:#B58B45">
+              </label>
+              <label style="display:flex;flex-direction:column;gap:7px">
+                <span style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:#8A8070;font-weight:500">Plage horaire *</span>
+                <select name="plage_horaire"  required="" style="font-size:14px;color:#2A2117;background:#fff;border:1px solid rgba(42,33,23,.18);padding:12px 14px;border-radius:2px;appearance:none" style-focus="border-color:#B58B45">
+                  <option value="">Sélectionnez…</option>
+                  <option>Matinée (8h – 12h)</option>
+                  <option>Après-midi (12h – 17h)</option>
+                  <option>Soirée (18h – 00h)</option>
+                  <option>Chabbat</option>
+                  <option>Journée complète</option>
+                </select>
+              </label>
+            </div>
+            <label style="display:flex;flex-direction:column;gap:7px">
+              <span style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:#8A8070;font-weight:500">Message (optionnel)</span>
+              <textarea name="message" name="message" rows="3" placeholder="Nombre d'invités, demandes particulières…" style="font-size:14px;color:#2A2117;background:#fff;border:1px solid rgba(42,33,23,.18);padding:12px 14px;border-radius:2px;resize:vertical;font-weight:300" style-focus="border-color:#B58B45"></textarea>
+            </label>
+            <button type="submit" style="margin-top:4px;font-size:12px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;color:#fff;background:#B58B45;border:none;padding:17px;border-radius:2px;cursor:pointer" style-hover="background:#9C7634">Envoyer ma demande de devis</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact" style="padding:clamp(80px,11vw,140px) clamp(24px,7vw,120px);background:#F4EEE2">
+    <div style="max-width:1280px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:clamp(40px,6vw,80px);align-items:center">
+      <div class="__rv">
+        <div style="display:inline-flex;align-items:center;gap:12px;margin-bottom:20px">
+          <span style="width:28px;height:1px;background:#B58B45"></span>
+          <span style="font-size:11px;font-weight:500;letter-spacing:3.5px;text-transform:uppercase;color:#B58B45">Nous trouver</span>
+        </div>
+        <h2 style="font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(32px,4.2vw,52px);line-height:1.08">Venez nous <span style="font-style:italic;color:#B58B45">rencontrer</span></h2>
+        <p style="margin-top:18px;font-size:15.5px;font-weight:300;line-height:1.8;color:#5C5345;max-width:46ch;text-wrap:pretty">Notre équipe est disponible pour vous accueillir et organiser une visite des salons sur rendez-vous.</p>
+        <div style="margin-top:36px;display:flex;flex-direction:column;gap:1px;background:rgba(42,33,23,.1);border:1px solid rgba(42,33,23,.1);border-radius:3px;overflow:hidden">
+          <div style="background:#FBF7EF;padding:22px 26px">
+            <div style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:#B58B45;font-weight:500">Adresse</div>
+            <div style="margin-top:7px;font-size:15px;color:#2A2117">18, Rue Clément Bayard — 92300 Levallois-Perret</div>
+          </div>
+          <div style="background:#FBF7EF;padding:22px 26px">
+            <div style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:#B58B45;font-weight:500">Téléphone</div>
+            <a href="tel:0749549790" style="margin-top:7px;display:block;font-size:15px;color:#2A2117" style-hover="color:#B58B45">07 49 54 97 90</a>
+          </div>
+          <div style="background:#FBF7EF;padding:22px 26px">
+            <div style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:#B58B45;font-weight:500">Email</div>
+            <a href="mailto:Salons@bethmenahem-lis.com" style="margin-top:7px;display:block;font-size:15px;color:#2A2117" style-hover="color:#B58B45">Salons@bethmenahem-lis.com</a>
+          </div>
+        </div>
+        <p style="margin-top:24px;font-size:13px;font-weight:300;line-height:1.7;color:#7A7163;max-width:48ch;text-wrap:pretty"><span style="color:#B58B45;font-weight:500">Institutions Sinaï</span> — Les Salons d'Honneur Beth Menahem font partie du centre éducatif et culturel Beth Menahem — Levallois.</p>
+      </div>
+      <div class="__rv" style="height:100%;min-height:440px;border-radius:3px;overflow:hidden;border:1px solid rgba(42,33,23,.1)">
+        <iframe title="Carte — 18 Rue Clément Bayard, Levallois" src="https://www.google.com/maps?q=18+Rue+Cl%C3%A9ment+Bayard+92300+Levallois-Perret&amp;output=embed" style="width:100%;height:100%;min-height:440px;border:0;filter:grayscale(.2) contrast(1.05)" loading="lazy"></iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer style="background:#221C14;padding:clamp(56px,7vw,88px) clamp(24px,7vw,120px) 40px">
+    <div style="max-width:1280px;margin:0 auto;display:flex;flex-wrap:wrap;justify-content:space-between;gap:40px;align-items:flex-start">
+      <div style="max-width:34ch">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:#FAF6EC;letter-spacing:.5px">Salons d'Honneur</div>
+        <div style="font-size:10px;letter-spacing:4px;text-transform:uppercase;color:#E4C77E;margin-top:4px">Beth Menahem · Levallois</div>
+        <p style="margin-top:18px;font-size:13px;font-weight:300;line-height:1.8;color:rgba(250,246,236,.6)">Un espace d'exception de 320 m² pour vos événements familiaux et communautaires, au cœur de Levallois.</p>
+      </div>
+      <div style="display:flex;gap:clamp(40px,6vw,90px);flex-wrap:wrap">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="font-size:10.5px;letter-spacing:2.5px;text-transform:uppercase;color:#E4C77E;margin-bottom:4px">Navigation</div>
+          <a href="#about" style="font-size:13.5px;color:rgba(250,246,236,.72)" style-hover="color:#fff">Le Complexe</a>
+          <a href="#espaces" style="font-size:13.5px;color:rgba(250,246,236,.72)" style-hover="color:#fff">Nos Espaces</a>
+          <a href="#services" style="font-size:13.5px;color:rgba(250,246,236,.72)" style-hover="color:#fff">Événements</a>
+          <a href="https://crmsalons-production.up.railway.app/galerie" style="font-size:13.5px;color:rgba(250,246,236,.72)" style-hover="color:#fff">Brochure</a>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="font-size:10.5px;letter-spacing:2.5px;text-transform:uppercase;color:#E4C77E;margin-bottom:4px">Contact</div>
+          <span style="font-size:13.5px;color:rgba(250,246,236,.72)">18 Rue Clément Bayard</span>
+          <span style="font-size:13.5px;color:rgba(250,246,236,.72)">92300 Levallois-Perret</span>
+          <a href="tel:0749549790" style="font-size:13.5px;color:rgba(250,246,236,.72)" style-hover="color:#fff">07 49 54 97 90</a>
+        </div>
+      </div>
+    </div>
+    <div style="max-width:1280px;margin:40px auto 0;padding-top:24px;border-top:1px solid rgba(250,246,236,.12);display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px">
+      <span style="font-size:12px;color:rgba(250,246,236,.5)">© 2026 Beth Menahem — Institutions Sinaï</span>
+      <span style="font-size:12px;color:rgba(250,246,236,.5)">18 Rue Clément Bayard, 92300 Levallois</span>
+    </div>
+  </footer>
+
+</div>
+</x-dc>
+
+
+
+
+<style>
+#siteNav.scrolled{background:rgba(244,238,226,.92)!important;backdrop-filter:blur(12px);border-bottom:1px solid rgba(42,33,23,.08)!important;padding:14px clamp(24px,5vw,64px)!important;}
+#siteNav.scrolled a,#siteNav.scrolled span{color:#2A2117!important;}
+</style>
 <script>
-  document.querySelectorAll('.nav-links a').forEach(a =>
-    a.addEventListener('click', () => document.getElementById('navLinks').classList.remove('open'))
-  );
+(function(){
+  var nav=document.getElementById('siteNav');
+  function onScroll(){ if(nav) nav.classList.toggle('scrolled', window.scrollY>60); }
+  window.addEventListener('scroll',onScroll,{passive:true}); onScroll();
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('__in');io.unobserve(e.target);}});},{threshold:0.12,rootMargin:'0px 0px -8% 0px'});
+  document.querySelectorAll('.__rv').forEach(function(el){io.observe(el);});
 
-  /* ── HERO : SCROLL PULSE ── */
-  setTimeout(() => {
-    const s = document.getElementById('heroScroll');
-    if (s) s.style.animation = 'pulse 2.6s ease-in-out infinite';
-  }, 3500);
-
-  /* ── HERO : LUMIÈRE CURSEUR ── */
-  const heroEl      = document.getElementById('hero');
-  const cursorLight = document.getElementById('cursorLight');
-  heroEl.addEventListener('mouseenter', () => cursorLight.style.opacity = '1');
-  heroEl.addEventListener('mouseleave', () => cursorLight.style.opacity = '0');
-  heroEl.addEventListener('mousemove',  e => {
-    cursorLight.style.left = e.clientX + 'px';
-    cursorLight.style.top  = e.clientY + 'px';
-  });
-
-  document.getElementById('devisForm').addEventListener('submit', async function(e) {
+  var form=document.getElementById('devisForm');
+  if(form){ form.addEventListener('submit',async function(e){
     e.preventDefault();
-    const btn = document.getElementById('submitBtn');
-    const msg = document.getElementById('formMsg');
-    msg.className = 'form-msg';
-    btn.disabled = true;
-    btn.textContent = 'Envoi en cours…';
-
-    const data = {};
-    new FormData(this).forEach((v, k) => data[k] = v);
-
-    try {
-      const res = await fetch('/api/devis', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      const json = await res.json();
-      if (res.ok) {
-        msg.innerHTML = `<strong>✅ Demande envoyée avec succès !</strong><br>Référence : <strong>${json.reference}</strong><br>Un email de confirmation a été envoyé à ${data.email}.`;
-        msg.className = 'form-msg ok';
-        this.reset();
-      } else {
-        throw new Error(json.error || 'Erreur serveur');
-      }
-    } catch (err) {
-      msg.textContent = `❌ ${err.message}`;
-      msg.className = 'form-msg err';
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Envoyer ma demande de devis';
-      setTimeout(() => msg.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
-    }
-  });
+    var btn=form.querySelector('button[type=submit],button:not([type])');
+    var data={}; new FormData(form).forEach(function(v,k){data[k]=v;}); data.source='site';
+    if(btn){btn.disabled=true;btn._t=btn.textContent;btn.textContent='Envoi…';}
+    try{
+      var res=await fetch('/api/devis',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+      var j=await res.json(); if(!res.ok) throw new Error(j.error||'Erreur');
+      var ref=document.getElementById('devisRef'); if(ref) ref.textContent=j.reference;
+      document.getElementById('devisFormWrap').style.display='none';
+      document.getElementById('devisSuccess').style.display='';
+      var d=document.getElementById('devis'); if(d) window.scrollTo({top:d.offsetTop-40,behavior:'smooth'});
+    }catch(err){ alert('❌ '+err.message); }
+    finally{ if(btn){btn.disabled=false;btn.textContent=btn._t;} }
+  }); }
+})();
+function resetDevis(){
+  var f=document.getElementById('devisForm'); if(f) f.reset();
+  document.getElementById('devisSuccess').style.display='none';
+  document.getElementById('devisFormWrap').style.display='';
+}
 </script>
-</body>
-</html>
+</body></html>
