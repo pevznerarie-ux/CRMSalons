@@ -106,6 +106,7 @@ app.post('/api/devis', (req, res) => {
   // Accepte soit les identifiants directs, soit le texte envoyé par le formulaire public
   const eventTypeId = b.event_type_id || resolveByName('event_types', b.type_evenement);
   const timeSlotId  = b.time_slot_id  || resolveByName('time_slots',  b.plage_horaire);
+  const spaceId     = b.space_id      || resolveByName('spaces',      b.salle);
   if (!b.nom || !b.prenom || !b.telephone || !b.email || !b.date_evenement) {
     return res.status(400).json({ error: 'Merci de renseigner nom, prénom, téléphone, email et date.' });
   }
@@ -114,6 +115,7 @@ app.post('/api/devis', (req, res) => {
   const extras = [];
   if (b.type_evenement && !eventTypeId) extras.push(`Type souhaité : ${b.type_evenement}`);
   if (b.plage_horaire  && !timeSlotId)  extras.push(`Créneau souhaité : ${b.plage_horaire}`);
+  if (b.salle          && !spaceId)     extras.push(`Salle souhaitée : ${b.salle}`);
   if (extras.length) message = extras.join(' — ') + (message ? '\n' + message : '');
 
   const ref = genRef();
@@ -122,8 +124,13 @@ app.post('/api/devis', (req, res) => {
      date_evenement, nombre_personnes, message_client, statut, source)
     VALUES (?,?,?,?,?,?,?,?,?,?,?, 'demande', ?)`).run(
       ref, b.nom.trim(), b.prenom.trim(), b.telephone.trim(), b.email.trim(),
-      eventTypeId || null, b.space_id || null, timeSlotId || null,
+      eventTypeId || null, spaceId || null, timeSlotId || null,
       b.date_evenement, parseInt(b.nombre_personnes) || 0, message, b.source || 'site');
+  // Pré-calcul du prix si la salle et le créneau sont connus (le commercial pourra ajuster)
+  if (spaceId && timeSlotId) {
+    const q = pricing.quote({ space_id: spaceId, event_type_id: eventTypeId, time_slot_id: timeSlotId, date: b.date_evenement, nombre_personnes: parseInt(b.nombre_personnes) || 0 });
+    db.prepare('UPDATE reservations SET prix_base = ?, total = ? WHERE id = ?').run(q.prix_base, q.total, info.lastInsertRowid);
+  }
   const r = enrich(db.prepare('SELECT * FROM reservations WHERE id = ?').get(info.lastInsertRowid));
   logActivity(r.id, null, 'demande_creee', `Demande reçue depuis le site (${r.source})`);
 
@@ -533,18 +540,30 @@ app.delete('/api/documents/:id', requireAuth, requireRole('commercial', 'adminis
 });
 // Envoyer le devis par email (avec PDF en pièce jointe si présent)
 app.post('/api/reservations/:id/send-devis', requireAuth, requireRole('commercial', 'administratif'), async (req, res) => {
-  const r = getFull(req.params.id);
-  if (!r) return res.status(404).json({ error: 'Introuvable' });
-  const { fmtEur } = require('./lib');
-  const data = devisData(r);
-  const doc = db.prepare("SELECT * FROM documents WHERE reservation_id = ? AND type='devis' ORDER BY id DESC LIMIT 1").get(r.id);
-  const lignes = mailer.row(`Location — ${data.space_label || 'salle'}`, fmtEur(data.prix_base))
-    + data.options.map(o => mailer.row(o.nom + (o.unite === 'par_personne' ? ` (${o.quantite} pers.)` : (o.quantite > 1 ? ` ×${o.quantite}` : '')), fmtEur(o.total))).join('');
-  const attachments = doc ? [{ filename: `devis-${r.reference}.pdf`, path: path.join(uploadDir, doc.filename) }] : [];
-  await mailer.sendMail({ to: r.email, subject: `Votre devis — réf. ${r.reference}`, html: mailer.tplDevis(data, lignes), attachments });
-  db.prepare("UPDATE reservations SET statut = CASE WHEN statut='demande' THEN 'devis_envoye' ELSE statut END, updated_at=? WHERE id=?").run(now(), r.id);
-  logActivity(r.id, req.user, 'devis_envoye');
-  res.json({ success: true });
+  try {
+    const r = getFull(req.params.id);
+    if (!r) return res.status(404).json({ error: 'Introuvable' });
+    const { fmtEur } = require('./lib');
+    const data = devisData(r);
+    // On génère toujours un PDF frais avec le prix actuel du CRM, puis on l'attache
+    const { filename } = await pdf.buildDevis(data);
+    db.prepare(`INSERT INTO documents (reservation_id, type, filename, original_name, genere) VALUES (?, 'devis', ?, ?, 1)`)
+      .run(r.id, filename, `devis-${r.reference}.pdf`);
+    db.prepare("UPDATE reservations SET statut = CASE WHEN statut='demande' THEN 'devis_envoye' ELSE statut END, updated_at=? WHERE id=?").run(now(), r.id);
+    logActivity(r.id, req.user, 'devis_envoye');
+    const lignes = mailer.row(`Location — ${data.space_label || 'salle'}`, fmtEur(data.prix_base))
+      + data.options.map(o => mailer.row(o.nom + (o.unite === 'par_personne' ? ` (${o.quantite} pers.)` : (o.quantite > 1 ? ` ×${o.quantite}` : '')), fmtEur(o.total))).join('');
+    const attachments = [{ filename: `devis-${r.reference}.pdf`, path: path.join(uploadDir, filename) }];
+    try {
+      await mailer.sendMail({ to: r.email, subject: `Votre devis — réf. ${r.reference}`, html: mailer.tplDevis(data, lignes), attachments });
+    } catch (mailErr) {
+      // Le PDF est généré et enregistré : on signale juste l'échec d'envoi, sans planter
+      return res.status(502).json({ error: "Devis généré mais l'email n'a pas pu être envoyé : " + mailErr.message, filename });
+    }
+    res.json({ success: true, filename });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ─── STATS / DASHBOARD ───────────────────────────────────────────────────────
