@@ -487,6 +487,7 @@
 
   <!-- MENU MOBILE -->
   <div id="mobileMenu">
+    <button class="mm-close" aria-label="Fermer le menu">✕</button>
     <a href="#about">Le Complexe</a>
     <a href="#espaces">Nos Espaces</a>
     <a href="#services">Événements</a>
@@ -518,7 +519,7 @@
         <a href="#espaces" style="display:inline-flex;align-items:center;gap:10px;font-size:12.5px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#fff;border:1px solid rgba(255,255,255,.55);padding:17px 34px;border-radius:1px;transition:background .35s" style-hover="background:rgba(255,255,255,.12)">Découvrir les espaces</a>
       </div>
     </div>
-    <div style="position:absolute;bottom:34px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;animation:heroRise 1.2s ease 1.5s both">
+    <div style="position:absolute;bottom:34px;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:10px;animation:heroRise 1.2s ease 1.5s both">
       <span style="font-size:9.5px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.7);animation:softPulse 2.6s ease-in-out infinite">Découvrir</span>
       <span style="width:1px;height:46px;background:linear-gradient(rgba(255,255,255,.7),rgba(255,255,255,0))"></span>
     </div>
@@ -571,7 +572,7 @@
   </section>
 
   <!-- BROCHURE (dark band) -->
-  <section style="position:relative;padding:clamp(72px,9vw,120px) clamp(24px,7vw,120px);background:#221C14;overflow:hidden">
+  <section id="brochure" style="position:relative;padding:clamp(72px,9vw,120px) clamp(24px,7vw,120px);background:#221C14;overflow:hidden">
     <img src="/images/salle-polyvalente.jpg" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.16">
     <div style="position:absolute;inset:0;background:linear-gradient(90deg,#221C14 28%,rgba(34,28,20,.55))"></div>
     <div class="__rv" style="position:relative;max-width:1280px;margin:0 auto;display:flex;flex-direction:column;align-items:flex-start">
@@ -936,6 +937,7 @@ body.menu-open #navBurger span:nth-child(3){transform:translateY(-7px) rotate(-4
 body.menu-open #mobileMenu{opacity:1;visibility:visible}
 #mobileMenu a{font-size:19px;font-weight:400;letter-spacing:1px;color:#FAF6EC}
 #mobileMenu a.mm-cta{margin-top:10px;font-size:13px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#221C14;background:#E4C77E;padding:15px 34px;border-radius:1px}
+#mobileMenu .mm-close{position:absolute;top:18px;right:16px;background:none;border:none;cursor:pointer;font-size:26px;line-height:1;color:#FAF6EC;padding:14px}
 body.menu-open{overflow:hidden}
 
 /* ── Responsive mobile / tablette ── */
@@ -951,6 +953,8 @@ body.menu-open{overflow:hidden}
   #about [style*="bottom:-30px"]{right:12px!important}
   /* image de la carte contact : hauteur raisonnable */
   #contact [style*="min-height:440px"]{min-height:280px!important}
+  /* boutons empilés : même largeur, texte centré */
+  #top div[style*="flex-wrap"] a,#brochure div[style*="flex-wrap"] a{width:100%;max-width:340px;justify-content:center}
 }
 @media (max-width:480px){
   /* les stats 4 colonnes passent en 1 colonne sur très petit écran */
@@ -970,8 +974,8 @@ body.menu-open{overflow:hidden}
       burger.setAttribute('aria-expanded',open?'true':'false');
       burger.setAttribute('aria-label',open?'Fermer le menu':'Ouvrir le menu');
     });
-    mobileMenu.querySelectorAll('a').forEach(function(a){
-      a.addEventListener('click',function(){
+    mobileMenu.querySelectorAll('a,.mm-close').forEach(function(el){
+      el.addEventListener('click',function(){
         document.body.classList.remove('menu-open');
         burger.setAttribute('aria-expanded','false');
       });
