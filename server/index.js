@@ -599,7 +599,7 @@ app.get('/api/stats', requireAuth, (req, res) => {
 app.use('/uploads', express.static(uploadDir));
 app.use('/crm', express.static(path.join(__dirname, '..', 'public', 'crm')));
 app.get('/crm*', (req, res) => res.sendFile(path.join(__dirname, '..', 'public', 'crm', 'index.html')));
-app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use(express.static(path.join(__dirname, '..', 'public'), { extensions: ['html'] }));
 
 // ─── DÉMARRAGE ──────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
