@@ -473,14 +473,27 @@
       <span style="font-family:'Cormorant Garamond',serif;font-size:21px;font-weight:600;letter-spacing:.5px;color:#ffffff">Salons d'Honneur</span>
       <span style="font-family:'Jost',sans-serif;font-size:9.5px;font-weight:500;letter-spacing:4px;text-transform:uppercase;color:#E4C77E">Beth Menahem · Levallois</span>
     </a>
-    <div style="display:flex;align-items:center;gap:38px">
+    <div id="navLinks" style="display:flex;align-items:center;gap:38px">
       <a href="#about" style="font-size:13px;font-weight:400;letter-spacing:.5px;color:#ffffff">Le Complexe</a>
       <a href="#espaces" style="font-size:13px;font-weight:400;letter-spacing:.5px;color:#ffffff">Nos Espaces</a>
       <a href="#services" style="font-size:13px;font-weight:400;letter-spacing:.5px;color:#ffffff">Événements</a>
       <a href="#contact" style="font-size:13px;font-weight:400;letter-spacing:.5px;color:#ffffff">Contact</a>
       <a href="#devis" style="display:inline-flex;align-items:center;gap:9px;font-size:12px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:#fff;background:#B58B45;padding:12px 22px;border-radius:1px" style-hover="background:#9C7634">Devis gratuit</a>
     </div>
+    <button id="navBurger" aria-label="Ouvrir le menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
   </nav>
+
+  <!-- MENU MOBILE -->
+  <div id="mobileMenu">
+    <a href="#about">Le Complexe</a>
+    <a href="#espaces">Nos Espaces</a>
+    <a href="#services">Événements</a>
+    <a href="/galerie">Brochure</a>
+    <a href="#contact">Contact</a>
+    <a href="#devis" class="mm-cta">Devis gratuit</a>
+  </div>
 
   <!-- HERO -->
   <header id="top" style="position:relative;width:100%;height:100vh;min-height:680px;overflow:hidden">
@@ -908,12 +921,62 @@
 <style>
 #siteNav.scrolled{background:rgba(244,238,226,.92)!important;backdrop-filter:blur(12px);border-bottom:1px solid rgba(42,33,23,.08)!important;padding:14px clamp(24px,5vw,64px)!important;}
 #siteNav.scrolled a,#siteNav.scrolled span{color:#2A2117!important;}
+
+/* ── Burger (masqué sur desktop) ── */
+#navBurger{display:none;background:none;border:none;cursor:pointer;padding:10px;margin:-10px;z-index:60}
+#navBurger span{display:block;width:24px;height:2px;background:#fff;margin:5px 0;border-radius:1px;transition:transform .3s,opacity .3s,background .3s}
+#siteNav.scrolled #navBurger span{background:#2A2117}
+body.menu-open #navBurger span{background:#FAF6EC!important}
+body.menu-open #navBurger span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+body.menu-open #navBurger span:nth-child(2){opacity:0}
+body.menu-open #navBurger span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+/* ── Menu mobile plein écran ── */
+#mobileMenu{position:fixed;inset:0;z-index:55;background:rgba(34,28,20,.98);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;opacity:0;visibility:hidden;transition:opacity .35s ease,visibility .35s}
+body.menu-open #mobileMenu{opacity:1;visibility:visible}
+#mobileMenu a{font-size:19px;font-weight:400;letter-spacing:1px;color:#FAF6EC}
+#mobileMenu a.mm-cta{margin-top:10px;font-size:13px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#221C14;background:#E4C77E;padding:15px 34px;border-radius:1px}
+body.menu-open{overflow:hidden}
+
+/* ── Responsive mobile / tablette ── */
+@media (max-width:860px){
+  #navLinks{display:none!important}
+  #navBurger{display:block}
+  /* grilles multi-colonnes → une colonne */
+  [style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important}
+  [style*="grid-template-columns:0.85fr 1.15fr"]{grid-template-columns:1fr!important}
+  [style*="grid-template-columns:repeat(3,1fr)"]{grid-template-columns:1fr!important}
+  [style*="grid-template-columns:repeat(4,1fr)"]{grid-template-columns:repeat(2,1fr)!important}
+  /* badge "320 m²" : le ramener dans l'écran */
+  #about [style*="bottom:-30px"]{right:12px!important}
+  /* image de la carte contact : hauteur raisonnable */
+  #contact [style*="min-height:440px"]{min-height:280px!important}
+}
+@media (max-width:480px){
+  /* les stats 4 colonnes passent en 1 colonne sur très petit écran */
+  [style*="grid-template-columns:repeat(4,1fr)"]{grid-template-columns:1fr!important}
+}
 </style>
 <script>
 (function(){
   var nav=document.getElementById('siteNav');
   function onScroll(){ if(nav) nav.classList.toggle('scrolled', window.scrollY>60); }
   window.addEventListener('scroll',onScroll,{passive:true}); onScroll();
+
+  var burger=document.getElementById('navBurger'), mobileMenu=document.getElementById('mobileMenu');
+  if(burger&&mobileMenu){
+    burger.addEventListener('click',function(){
+      var open=document.body.classList.toggle('menu-open');
+      burger.setAttribute('aria-expanded',open?'true':'false');
+      burger.setAttribute('aria-label',open?'Fermer le menu':'Ouvrir le menu');
+    });
+    mobileMenu.querySelectorAll('a').forEach(function(a){
+      a.addEventListener('click',function(){
+        document.body.classList.remove('menu-open');
+        burger.setAttribute('aria-expanded','false');
+      });
+    });
+  }
   var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('__in');io.unobserve(e.target);}});},{threshold:0.12,rootMargin:'0px 0px -8% 0px'});
   document.querySelectorAll('.__rv').forEach(function(el){io.observe(el);});
 
