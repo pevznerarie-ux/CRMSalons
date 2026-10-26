@@ -689,7 +689,7 @@ const Config={
       <div class="form-field span2"><label>Relances automatiques</label><select id="set-relance_active"><option value="1" ${s.relance_active==='1'?'selected':''}>Activées</option><option value="0" ${s.relance_active==='0'?'selected':''}>Désactivées</option></select></div>
       <div class="form-field span2"><label>Conditions générales (CGV — apparaissent sur le contrat)</label><textarea id="set-cgv" style="min-height:120px">${UI.esc(s.cgv||'')}</textarea></div>
     </div><button class="btn btn-navy" style="margin-top:14px" onclick="Config.saveSettings()">💾 Enregistrer</button>`;},
-  async saveSettings(){const keys=['org_nom','org_email','org_telephone','org_siret','org_adresse','org_iban','acompte_pct','solde_jours_avant','relance_delai_jours','relance_active','cgv'];const body={};keys.forEach(k=>body[k]=val('set-'+k));await api('PUT','/settings',body);toast('✅ Paramètres enregistrés');this.load();},
+  async saveSettings(){const keys=['org_nom','org_email','org_telephone','org_siret','org_adresse','org_directeur','org_ville','org_iban','acompte_pct','solde_jours_avant','relance_delai_jours','relance_active'];const body={};keys.forEach(k=>body[k]=val('set-'+k));await api('PUT','/settings',body);toast('✅ Paramètres enregistrés');this.load();},
   // éditeurs génériques via modale
   genModal(title,fields,onSave){
     document.getElementById('genTitle').textContent=title;

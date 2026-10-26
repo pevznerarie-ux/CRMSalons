@@ -309,34 +309,156 @@ function buildContrat(r) {
   const stream = fs.createWriteStream(path.join(uploadDir, filename));
   doc.pipe(stream);
 
-  let y = header(doc, org, 'CONTRAT DE LOCATION', r.reference);
-  y = clientBlock(doc, r, y);
-  y += 10;
-  y = eventBlock(doc, r, y);
-  y += 10;
-  y = table(doc, r, y);
-
-  // Conditions générales
   const W = doc.page.width;
-  doc.fillColor(C.navy).fontSize(10).font('Helvetica-Bold').text('CONDITIONS GÉNÉRALES', 40, y);
-  y += 16;
-  doc.rect(40, y, W - 80, 1).fill(C.gold);
-  y += 8;
-  doc.fillColor('#444').font('Helvetica').fontSize(8.5)
-     .text(org.cgv || 'Conditions générales à compléter dans les Paramètres.', 40, y, { width: W - 80, align: 'justify' });
 
-  // Signatures
-  const ySign = Math.max(doc.y + 36, 680);
-  doc.rect(40, ySign, W - 80, 1).fill(C.lightLine);
-  const signY = ySign + 12;
-  doc.fillColor(C.dark).font('Helvetica-Bold').fontSize(10)
-     .text('Le prestataire', 40, signY)
-     .text('Le client (lu et approuvé)', W / 2 + 20, signY);
-  doc.rect(40, signY + 52, 180, 1).fill(C.navy);
-  doc.rect(W / 2 + 20, signY + 52, 180, 1).fill(C.navy);
-  doc.fillColor(C.grey).fontSize(8)
-     .text('Signature', 40, signY + 56, { width: 180, align: 'center' })
-     .text('Signature + mention « Lu et approuvé »', W / 2 + 20, signY + 56, { width: 180, align: 'center' });
+  let y = header(doc, org, 'CONTRAT DE LOCATION', r.reference);
+
+  // ── Parties ──────────────────────────────────────────────────────────────
+  const partiesY = y;
+  // Fond crème sur toute la largeur
+  doc.rect(40, partiesY, W - 80, 68).fillAndStroke(C.cream, C.lightLine);
+  doc.fillColor(C.navy).fontSize(8).font('Helvetica-Bold').text('ENTRE LES SOUSSIGNÉS', 54, partiesY + 8);
+  doc.fillColor(C.dark).font('Helvetica').fontSize(9.5)
+     .text(`${org.org_nom || "Salons Beth Menahem - L.I.S"}, représentée par ${org.org_directeur || 'Moché Cohen'}, ci-après dénommée « Le Directeur du salon »`, 54, partiesY + 20, { width: (W - 108) / 2 - 10 });
+  doc.fillColor(C.grey).fontSize(8.5)
+     .text(`${r.prenom} ${r.nom}${r.adresse ? ', demeurant à ' + r.adresse : ''}, ci-après dénommé(e) « Le Locataire »`, (W / 2) + 10, partiesY + 20, { width: (W - 108) / 2 });
+  y = partiesY + 78;
+
+  // ── Sections du contrat ──────────────────────────────────────────────────
+  const total = r.total || 0;
+  const acompte = r.acompte_montant || 500;
+  const solde = total - acompte;
+  const dateLimit = r.date_evenement ? (() => {
+    const d = new Date(r.date_evenement + 'T12:00:00');
+    d.setDate(d.getDate() - 30);
+    return d.toLocaleDateString('fr-FR');
+  })() : '[Date]';
+
+  // Helper : titre de section
+  const sectionTitle = (num, titre, yy) => {
+    doc.rect(40, yy, W - 80, 22).fill(C.navy);
+    doc.fillColor(C.gold).font('Helvetica-Bold').fontSize(9)
+       .text(`${num}. ${titre}`, 52, yy + 6);
+    return yy + 22;
+  };
+
+  // Helper : paragraphe justifié
+  const para = (txt, yy, opts = {}) => {
+    doc.fillColor(opts.color || C.dark).font(opts.bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(opts.size || 9)
+       .text(txt, 52, yy, { width: W - 104, align: 'justify', ...opts });
+    return doc.y + (opts.gap || 6);
+  };
+
+  // Helper : puce
+  const bullet = (txt, yy) => {
+    doc.fillColor(C.gold).font('Helvetica-Bold').fontSize(9).text('•', 52, yy, { continued: false });
+    doc.fillColor(C.dark).font('Helvetica').fontSize(9).text(txt, 66, yy, { width: W - 118 });
+    return doc.y + 3;
+  };
+
+  // Helper : ligne key/value crème
+  let altKV = false;
+  const kvLine = (label, val, yy) => {
+    const bg = altKV ? C.white : C.cream;
+    doc.rect(40, yy, W - 80, 22).fillAndStroke(bg, C.lightLine);
+    doc.fillColor(C.grey).font('Helvetica-Bold').fontSize(8).text(label, 52, yy + 7, { width: 180 });
+    doc.fillColor(C.dark).font('Helvetica').fontSize(9).text(val || '—', 52 + 185, yy + 6, { width: W - 104 - 185 });
+    altKV = !altKV;
+    return yy + 22;
+  };
+
+  // ── 1. Objet ──────────────────────────────────────────────────────────────
+  y = sectionTitle('1', 'OBJET DU CONTRAT', y);
+  y += 6;
+  y = para(`Le présent contrat a pour objet la location de la salle « ${r.space_label || 'Beth Menahem'} », située au ${org.org_adresse || '18, Rue Clément Bayard – 92300 Levallois'}, pour l'événement suivant :`, y);
+  y += 4;
+  y = kvLine('Type d\'événement', r.type_label || '—', y);
+  y = kvLine('Date', fmtDate(r.date_evenement), y);
+  y = kvLine('Horaires', r.slot_label || '—', y);
+  y = kvLine('Nombre d\'invités', r.nombre_personnes ? `${r.nombre_personnes} personnes` : '—', y);
+  y += 10;
+
+  // ── 2. Tarifs ─────────────────────────────────────────────────────────────
+  y = sectionTitle('2', 'TARIFS ET CONDITIONS DE PAIEMENT', y);
+  y += 6;
+  y = kvLine('Montant de la location', fmtEur(total) + ' TTC', y);
+  if (r.acompte_montant || true) y = kvLine('Acompte à verser à la signature', fmtEur(acompte), y);
+  y = kvLine('Solde à régler au plus tard', `${fmtEur(solde)} — 30 jours avant l'événement (${dateLimit})`, y);
+  y = kvLine('Modes de paiement acceptés', 'Espèces · Virement bancaire · Chèque bancaire', y);
+  y = kvLine('Chèque de caution', '3 000 € TTC (restitué après visite des locaux par le régisseur)', y);
+  y += 10;
+
+  // ── 3. Prestations incluses ───────────────────────────────────────────────
+  y = sectionTitle('3', 'PRESTATIONS INCLUSES', y);
+  y += 6;
+  const prestations = [
+    'L\'accès à la salle pour la durée convenue',
+    'L\'utilisation des équipements disponibles (tables et chaises)',
+    'Le ménage après l\'événement (hors nettoyage de la cuisine)',
+    'L\'accès au salon et à l\'office selon modalités convenues avec le régisseur',
+  ];
+  if (r.options && r.options.length) r.options.forEach(o => prestations.push(o.nom));
+  for (const p of prestations) y = bullet(p, y);
+  y += 8;
+
+  // ── 4. Règlement intérieur ─────────────────────────────────────────────────
+  // Nouvelle page si moins de 180px disponibles
+  if (y > doc.page.height - 250) { doc.addPage(); y = 50; }
+  y = sectionTitle('4', 'RÈGLEMENT INTÉRIEUR', y);
+  y += 6;
+  const reglements = [
+    'Interdiction de fumer ou d\'utiliser tout appareil à fumée à l\'intérieur.',
+    'Respect strict des horaires convenus. Toute heure supplémentaire sera facturée 850 € / heure.',
+    'Interdiction de nuisances sonores après 00h15.',
+    'Le Locataire est responsable de toute dégradation du matériel ou des locaux.',
+    'Le nettoyage de la cuisine est à la charge du traiteur. Les déchets doivent être évacués par ses soins. En cas de non-respect, des frais de 750 € seront appliqués.',
+    'Ce salon étant situé au sein d\'une école juive, la Hala\'ha concernant la Mehitsa doit être respectée lors des danses. En cas de non-respect, la musique sera interrompue.',
+  ];
+  for (const reg of reglements) y = bullet(reg, y);
+  y += 8;
+
+  // ── 5. Annulation ─────────────────────────────────────────────────────────
+  y = sectionTitle('5', 'ANNULATION ET REMBOURSEMENT', y);
+  y += 6;
+  y = bullet('Plus de 30 jours avant l\'événement : remboursement intégral de l\'acompte.', y);
+  y = bullet('Moins de 30 jours avant l\'événement : aucun remboursement.', y);
+  y += 8;
+
+  // ── 6. Responsabilité et assurance ────────────────────────────────────────
+  y = sectionTitle('6', 'RESPONSABILITÉ ET ASSURANCE', y);
+  y += 6;
+  y = para('Le Locataire est seul responsable des dommages causés à la salle ou au matériel.', y);
+  y = para('Important : Tous les prestataires doivent fournir leur attestation d\'assurance au régisseur au plus tard 1 semaine avant l\'événement.', y, { color: '#B7410E', bold: true });
+  y += 8;
+
+  // ── 7. Résiliation ────────────────────────────────────────────────────────
+  y = sectionTitle('7', 'CLAUSE DE RÉSILIATION', y);
+  y += 6;
+  y = para('En cas de non-respect des clauses du présent contrat, le Bailleur se réserve le droit d\'annuler la location sans remboursement.', y);
+  y += 16;
+
+  // ── Signatures ────────────────────────────────────────────────────────────
+  if (y > doc.page.height - 160) { doc.addPage(); y = 50; }
+  const ville = org.org_ville || 'Levallois';
+  const dateSig = new Date().toLocaleDateString('fr-FR');
+  doc.rect(40, y, W - 80, 1).fill(C.gold);
+  y += 14;
+  doc.fillColor(C.grey).font('Helvetica').fontSize(8.5)
+     .text(`Fait à ${ville}, le ${dateSig}`, 40, y, { width: W - 80, align: 'center' });
+  y += 18;
+
+  const colW = (W - 100) / 2;
+  // Colonne gauche
+  doc.fillColor(C.dark).font('Helvetica-Bold').fontSize(9.5).text('Le Directeur du Salon', 40, y);
+  doc.fillColor(C.grey).font('Helvetica').fontSize(8.5).text(org.org_directeur || 'Moché Cohen', 40, y + 13);
+  doc.rect(40, y + 60, colW, 1).fill(C.navy);
+  doc.fillColor(C.grey).fontSize(8).text('Date et Signature', 40, y + 64, { width: colW, align: 'center' });
+  // Colonne droite
+  const cx = 60 + colW;
+  doc.fillColor(C.dark).font('Helvetica-Bold').fontSize(9.5).text('Le Locataire', cx, y);
+  doc.fillColor(C.grey).font('Helvetica').fontSize(8.5).text(`${r.prenom} ${r.nom}`, cx, y + 13);
+  doc.rect(cx, y + 60, colW, 1).fill(C.navy);
+  doc.fillColor(C.grey).fontSize(8).text('Signature précédée de « Lu et approuvé »', cx, y + 64, { width: colW, align: 'center' });
 
   footer(doc, org);
   doc.end();
