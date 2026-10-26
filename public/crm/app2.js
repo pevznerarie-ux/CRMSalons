@@ -59,11 +59,23 @@ Object.assign(Res, {
           <div class="nrf-body">
             <div class="form-grid">
               <div class="form-field"><label>Type d'événement</label><select id="f-event_type_id" onchange="Res.checkAvail();Res._updateSummary('evenement')">${opt(CONFIG.event_types,r.event_type_id)}</select></div>
-              <div class="form-field"><label>Salle / espace</label><select id="f-space_id" onchange="Res.checkAvail();Res._updateSummary('evenement')">${opt(CONFIG.spaces,r.space_id)}</select></div>
               <div class="form-field"><label>Date *</label><input type="date" id="f-date_evenement" value="" onchange="Res.checkAvail();Res._updateSummary('evenement')"></div>
-              <div class="form-field"><label>Plage horaire</label><select id="f-time_slot_id" onchange="Res.checkAvail()">${opt(CONFIG.time_slots,r.time_slot_id)}</select></div>
               <div class="form-field"><label>Nombre de personnes</label><input type="number" id="f-nombre_personnes" min="0" value="" oninput="Res.recalc()"></div>
               <div class="form-field"><label>Adresse client</label><input id="f-adresse" value=""></div>
+            </div>
+            <div class="nrf-pick-group">
+              <div class="nrf-pick-label">🏛️ Salle / espace <span class="nrf-pick-req">*</span></div>
+              <div class="nrf-pick-row" id="nrf-spaces">
+                ${CONFIG.spaces.map(s=>`<button type="button" class="nrf-pick-btn" data-val="${s.id}" data-group="space" style="--pick-color:${s.couleur||'#1E3A5F'}" onclick="Res._pickBtn(this,'space')">${UI.esc(s.nom)}</button>`).join('')}
+              </div>
+              <input type="hidden" id="f-space_id" value="">
+            </div>
+            <div class="nrf-pick-group">
+              <div class="nrf-pick-label">🕐 Plage horaire <span class="nrf-pick-req">*</span></div>
+              <div class="nrf-pick-row" id="nrf-slots">
+                ${CONFIG.time_slots.map(s=>`<button type="button" class="nrf-pick-btn nrf-pick-slot" data-val="${s.id}" data-group="slot" onclick="Res._pickBtn(this,'slot')"><strong>${UI.esc(s.nom)}</strong><span>${s.heure_debut||''} – ${s.heure_fin||''}</span></button>`).join('')}
+              </div>
+              <input type="hidden" id="f-time_slot_id" value="">
             </div>
             <div id="availBox"></div>
             <button class="btn btn-navy nrf-next" style="margin-top:12px" onclick="Res._nextSection('evenement','tarif')">Suivant : Tarification →</button>
@@ -240,6 +252,18 @@ Object.assign(Res, {
     if(hasContrat) return 'contrat_envoye';
     if(hasDevis) return 'devis_envoye';
     return null;
+  },
+
+  // Sélection visuelle salle / plage horaire
+  _pickBtn(btn, group){
+    const row = btn.closest('.nrf-pick-row');
+    row.querySelectorAll('.nrf-pick-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const hiddenId = group==='space' ? 'f-space_id' : 'f-time_slot_id';
+    const hidden = document.getElementById(hiddenId);
+    if(hidden) hidden.value = btn.dataset.val;
+    Res.checkAvail();
+    Res._updateSummary('evenement');
   },
 
   // Sections accordéon (nouvelle réservation)

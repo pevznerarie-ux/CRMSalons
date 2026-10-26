@@ -1163,3 +1163,81 @@ td { padding: 12px 16px; font-size: 13.5px; vertical-align: middle; }
   padding: 10px 14px;
   font-size: 13px;
 }
+
+/* ─── Sélection visuelle salle / plage horaire (nouvelle demande) ─── */
+.nrf-pick-group {
+  margin: 16px 0 4px;
+}
+.nrf-pick-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+  margin-bottom: 8px;
+  letter-spacing: 0.01em;
+}
+.nrf-pick-req {
+  color: #e53e3e;
+  margin-left: 2px;
+}
+.nrf-pick-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.nrf-pick-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text-1);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+  outline: none;
+}
+.nrf-pick-btn::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--pick-color, #1E3A5F);
+  flex-shrink: 0;
+}
+.nrf-pick-btn:hover {
+  border-color: var(--pick-color, #1E3A5F);
+  background: color-mix(in srgb, var(--pick-color, #1E3A5F) 8%, var(--card-bg));
+}
+.nrf-pick-btn.active {
+  border-color: var(--pick-color, #1E3A5F);
+  background: color-mix(in srgb, var(--pick-color, #1E3A5F) 12%, var(--card-bg));
+  color: var(--pick-color, #1E3A5F);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pick-color, #1E3A5F) 20%, transparent);
+}
+.nrf-pick-slot {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 16px;
+  min-width: 130px;
+}
+.nrf-pick-slot::before {
+  display: none;
+}
+.nrf-pick-slot strong {
+  font-size: 13px;
+}
+.nrf-pick-slot span {
+  font-size: 11px;
+  color: var(--text-3);
+  font-weight: 400;
+}
+.nrf-pick-slot.active span {
+  color: inherit;
+  opacity: 0.75;
+}
