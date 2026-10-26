@@ -564,6 +564,6 @@ async function changePassword(){const cur=val('pwCurrent'),nw=val('pwNew'),cf=va
   catch(e){show('❌ '+e.message,'var(--red)');}}
 
 // ─── INIT ──────────────────────────────────────────────────────────────────────
-document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)UI.closeModal(o.id);}));
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o && o.id!=='modalReservation')UI.closeModal(o.id);}));
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-overlay.active').forEach(m=>m.classList.remove('active'));});
 if(TOKEN){try{const p=JSON.parse(atob(TOKEN.split('.')[1]));if(p.exp*1000>Date.now()){if(p.mcp){document.getElementById('loginScreen').style.display='none';document.getElementById('forcePwScreen').style.display='flex';}else boot();}else logout();}catch{logout();}}
