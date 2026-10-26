@@ -39,24 +39,27 @@ function header(doc, org, titre, ref) {
   doc.rect(0, 97, W, 3).fill(C.gold);
 
   // Monogramme
-  drawMonogram(doc, 40, 28, 44);
+  drawMonogram(doc, 38, 26, 48);
 
-  // Nom de l'établissement
-  doc.fillColor(C.gold).fontSize(17).font('Helvetica-Bold')
-     .text(org.org_nom || "Salons d'Honneur Beth Menahem", 100, 32, { width: W - 220 });
+  // Nom de l'établissement — zone strictement délimitée entre monogramme et bloc titre
+  const nomX = 98, nomW = W - 98 - 140; // laisser 140px pour le titre à droite
+  const nom = org.org_nom || "Salons d'Honneur Beth Menahem";
+  doc.fillColor(C.gold).fontSize(13).font('Helvetica-Bold')
+     .text(nom, nomX, 30, { width: nomW, lineGap: 1 });
 
-  // Coordonnées en blanc petit
-  const coord = [org.org_adresse, org.org_telephone, org.org_email].filter(Boolean).join('   •   ');
+  // Coordonnées en blanc petit — juste après le nom
+  const coord = [org.org_adresse, org.org_telephone, org.org_email].filter(Boolean).join('  ·  ');
+  doc.fillColor(C.goldLt).fontSize(8).font('Helvetica')
+     .text(coord || '', nomX, 66, { width: nomW });
+
+  // Titre du document (côté droit) — aligné à droite, zone fixe
+  const titreX = W - 130;
+  doc.fillColor(C.white).fontSize(13).font('Helvetica-Bold')
+     .text(titre, titreX, 28, { width: 100, align: 'right' });
   doc.fillColor(C.goldLt).fontSize(8.5).font('Helvetica')
-     .text(coord || '', 100, 55, { width: W - 220 });
-
-  // Titre du document (côté droit)
-  doc.fillColor(C.white).fontSize(12).font('Helvetica-Bold')
-     .text(titre, W - 160, 30, { width: 120, align: 'right' });
-  doc.fillColor(C.goldLt).fontSize(8.5).font('Helvetica')
-     .text(`Réf. ${ref}`, W - 160, 48, { width: 120, align: 'right' });
+     .text(`Réf. ${ref}`, titreX, 50, { width: 100, align: 'right' });
   doc.fillColor(C.goldLt).fontSize(8.5)
-     .text(new Date().toLocaleDateString('fr-FR'), W - 160, 60, { width: 120, align: 'right' });
+     .text(new Date().toLocaleDateString('fr-FR'), titreX, 63, { width: 100, align: 'right' });
 
   return 120;
 }
