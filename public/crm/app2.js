@@ -501,26 +501,57 @@ Object.assign(Res, {
     if (!r.id) { el.innerHTML = '<div class="alert alert-info">Enregistrez la réservation pour gérer la signature.</div>'; return; }
     const clientSigned = !!r.signed_client_at;
     const staffSigned  = !!r.signed_staff_at;
+    const bothSigned   = clientSigned && staffSigned;
     const sigUrl = r.signature_token ? `${location.origin}/signer/${r.signature_token}` : null;
+    const canAct = can('commercial','administratif');
 
-    el.innerHTML = `<div class="form-section-title">✍️ Signature électronique</div>
-      <div class="sig-status-row ${clientSigned ? 'signed' : 'unsigned'}">
-        <span class="sig-who">${clientSigned ? '✅' : '⏳'} Signature client</span>
-        <span class="sig-date">${clientSigned ? 'Signé le ' + fmtDate(r.signed_client_at) : 'En attente'}</span>
-        ${!clientSigned && can('commercial', 'administratif') ? `<button class="btn btn-navy btn-sm" onclick="Res.requestSignature()">📩 Envoyer le lien de signature</button>` : ''}
-      </div>
-      <div class="sig-status-row ${staffSigned ? 'signed' : 'unsigned'}">
-        <span class="sig-who">${staffSigned ? '✅' : '⏳'} Contresignature équipe</span>
-        <span class="sig-date">${staffSigned ? 'Signé le ' + fmtDate(r.signed_staff_at) + (r.signature_staff_nom ? ' par ' + UI.esc(r.signature_staff_nom) : '') : 'En attente'}</span>
-        ${!staffSigned && clientSigned && can('commercial', 'administratif') ? `<button class="btn btn-green btn-sm" onclick="Res.signStaff()">✍️ Contresigner</button>` : ''}
-      </div>
-      ${sigUrl ? `<div class="form-section-title" style="margin-top:16px">Lien de signature client</div>
-        <div class="sig-link-box">${sigUrl}</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText('${sigUrl}').then(()=>toast('📋 Lien copié'))">📋 Copier</button>
-          <a href="${sigUrl}" target="_blank" class="btn btn-ghost btn-sm">🔗 Ouvrir</a>
-        </div>` : ''}
-      ${!sigUrl && can('commercial','administratif') ? '<div class="alert alert-info" style="margin-top:12px">Cliquez sur « Envoyer le lien de signature » pour générer un lien sécurisé.</div>' : ''}`;
+    // Barre de progression
+    const step = bothSigned ? 3 : clientSigned ? 2 : 1;
+    const pct = step === 3 ? 100 : step === 2 ? 60 : 0;
+    const progressHtml = `
+      <div class="sig-progress-wrap">
+        <div class="sig-progress-bar"><div class="sig-progress-fill" style="width:${pct}%"></div></div>
+        <div class="sig-steps-row">
+          <div class="sig-step ${step>=1?'done':''}"><div class="sig-step-dot">${step>=1?'✓':'1'}</div><div class="sig-step-label">Devis envoyé</div></div>
+          <div class="sig-step ${step>=2?'done':'pending'}"><div class="sig-step-dot">${clientSigned?'✓':'2'}</div><div class="sig-step-label">Client signé</div></div>
+          <div class="sig-step ${step>=3?'done':'pending'}"><div class="sig-step-dot">${staffSigned?'✓':'3'}</div><div class="sig-step-label">Contresigné</div></div>
+        </div>
+      </div>`;
+
+    // Carte signature client
+    const clientCard = `
+      <div class="sig-card ${clientSigned?'signed':'unsigned'}">
+        <div class="sig-card-head">
+          <span class="sig-icon">${clientSigned?'✅':'✍️'}</span>
+          <div class="sig-card-info">
+            <div class="sig-card-title">Signature du client</div>
+            <div class="sig-card-sub">${clientSigned ? 'Signé le <b>'+fmtDate(r.signed_client_at)+'</b>' : 'En attente de signature'}</div>
+          </div>
+          ${!clientSigned && canAct ? `<button class="btn btn-navy btn-sm" onclick="Res.requestSignature()">📩 Envoyer le lien</button>` : ''}
+        </div>
+        ${sigUrl && !clientSigned ? `
+          <div class="sig-link-row">
+            <input class="sig-link-input" readonly value="${sigUrl}" onclick="this.select()">
+            <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText('${sigUrl}').then(()=>toast('📋 Lien copié'))">📋</button>
+            <a href="${sigUrl}" target="_blank" class="btn btn-ghost btn-sm">↗</a>
+          </div>` : ''}
+      </div>`;
+
+    // Carte contresignature équipe
+    const staffCard = `
+      <div class="sig-card ${staffSigned?'signed':clientSigned?'ready':'locked'}">
+        <div class="sig-card-head">
+          <span class="sig-icon">${staffSigned?'✅':clientSigned?'⏳':'🔒'}</span>
+          <div class="sig-card-info">
+            <div class="sig-card-title">Contresignature de l'équipe</div>
+            <div class="sig-card-sub">${staffSigned ? 'Signé le <b>'+fmtDate(r.signed_staff_at)+(r.signature_staff_nom?' par <b>'+UI.esc(r.signature_staff_nom)+'</b>':'')+'</b>' : clientSigned ? 'Client signé — votre tour' : 'En attente de la signature client'}</div>
+          </div>
+          ${!staffSigned && clientSigned && canAct ? `<button class="btn btn-green btn-sm" onclick="Res.signStaff()">✍️ Contresigner</button>` : ''}
+        </div>
+      </div>`;
+
+    el.innerHTML = progressHtml + `<div class="sig-cards">${clientCard}${staffCard}</div>` +
+      (bothSigned ? `<div class="alert alert-success" style="margin-top:16px">🎉 Contrat signé des deux parties — statut mis à jour automatiquement.</div>` : '');
   },
 
   async requestSignature() {

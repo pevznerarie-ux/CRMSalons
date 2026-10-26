@@ -180,6 +180,96 @@ function footer(doc, org) {
   }
 }
 
+// ── Bloc conditions de règlement ──────────────────────────────────────────────
+function conditionsBlock(doc, r, y) {
+  const W = doc.page.width;
+  const x = 40, w = W - 80;
+
+  // Titre section
+  doc.rect(x, y, w, 26).fill(C.navy);
+  doc.fillColor(C.gold).fontSize(9).font('Helvetica-Bold')
+     .text('CONDITIONS DE RÈGLEMENT', x + 12, y + 8);
+  y += 26;
+
+  const total = r.total || 0;
+  const acompte = r.acompte_montant || Math.round(total * 0.3);
+  const solde = total - acompte;
+
+  // Ligne acompte
+  doc.rect(x, y, w, 32).fillAndStroke(C.cream, C.lightLine);
+  doc.fillColor(C.navy).font('Helvetica-Bold').fontSize(9)
+     .text('Acompte à la réservation (30%)', x + 12, y + 8);
+  doc.fillColor(C.green).font('Helvetica-Bold').fontSize(12)
+     .text(fmtEur(acompte), x, y + 7, { width: w - 12, align: 'right' });
+  doc.fillColor(C.grey).font('Helvetica').fontSize(8)
+     .text('À verser à la signature du contrat', x + 12, y + 20);
+  y += 32;
+
+  // Ligne solde
+  doc.rect(x, y, w, 32).fillAndStroke(C.white, C.lightLine);
+  doc.fillColor(C.dark).font('Helvetica-Bold').fontSize(9)
+     .text('Solde restant dû', x + 12, y + 8);
+  doc.fillColor(C.dark).font('Helvetica-Bold').fontSize(12)
+     .text(fmtEur(solde), x, y + 7, { width: w - 12, align: 'right' });
+  doc.fillColor(C.grey).font('Helvetica').fontSize(8)
+     .text('À verser 30 jours avant l\'événement', x + 12, y + 20);
+  y += 32;
+
+  // Moyens de paiement acceptés
+  doc.rect(x, y, w, 24).fillAndStroke(C.creamMd, C.lightLine);
+  doc.fillColor(C.grey).font('Helvetica').fontSize(8.5)
+     .text('Moyens de paiement acceptés : Virement bancaire · Chèque bancaire · Espèces', x + 12, y + 7);
+  y += 24;
+
+  return y + 12;
+}
+
+// ── Encadré validité devis ─────────────────────────────────────────────────────
+function validiteBlock(doc, r, y) {
+  const W = doc.page.width;
+  const x = 40, w = W - 80;
+  // Fond bleu ciel très léger
+  doc.rect(x, y, w, 46).fillAndStroke('#EBF0F8', C.lightLine);
+  // Trait gauche bleu
+  doc.rect(x, y, 4, 46).fill(C.navy);
+  doc.fillColor(C.navy).font('Helvetica-Bold').fontSize(9)
+     .text('Ce devis est valable 15 jours à compter de sa date d\'émission.', x + 16, y + 8, { width: w - 24 });
+  doc.fillColor(C.grey).font('Helvetica').fontSize(8.5)
+     .text('La réservation sera confirmée à réception de l\'acompte et du contrat signé. ' +
+           'Toute annulation devra être notifiée par écrit.', x + 16, y + 22, { width: w - 24 });
+  return y + 56;
+}
+
+// ── Zone signature devis ───────────────────────────────────────────────────────
+function signatureDevisBlock(doc, r, y) {
+  const W = doc.page.width;
+  const x = 40, w = W - 80;
+  // Séparateur or
+  doc.rect(x, y, w, 1).fill(C.gold);
+  y += 16;
+
+  const colW = (w - 20) / 2;
+
+  // Col gauche — prestataire
+  doc.fillColor(C.dark).font('Helvetica-Bold').fontSize(9)
+     .text('Pour l\'établissement', x, y);
+  doc.fillColor(C.grey).font('Helvetica').fontSize(8.5)
+     .text(new Date().toLocaleDateString('fr-FR'), x, y + 14);
+  doc.rect(x, y + 56, colW, 1).fill(C.navy);
+  doc.fillColor(C.grey).fontSize(8).text('Signature et cachet', x, y + 60, { width: colW, align: 'center' });
+
+  // Col droite — client
+  const cx = x + colW + 20;
+  doc.fillColor(C.dark).font('Helvetica-Bold').fontSize(9)
+     .text('Le client (bon pour accord)', cx, y);
+  doc.fillColor(C.grey).font('Helvetica').fontSize(8.5)
+     .text('Nom, date et lieu :', cx, y + 14);
+  doc.rect(cx, y + 56, colW, 1).fill(C.navy);
+  doc.fillColor(C.grey).fontSize(8).text('Signature précédée de « Lu et approuvé »', cx, y + 60, { width: colW, align: 'center' });
+
+  return y + 80;
+}
+
 // ── Devis ─────────────────────────────────────────────────────────────────────
 function buildDevis(r) {
   const org = getSettings();
@@ -194,12 +284,17 @@ function buildDevis(r) {
   y = eventBlock(doc, r, y);
   y += 10;
   y = table(doc, r, y);
+  y += 6;
+  y = conditionsBlock(doc, r, y);
+  y = validiteBlock(doc, r, y);
 
-  // Note de bas de devis
-  doc.rect(40, y, doc.page.width - 80, 1).fill(C.lightLine);
-  y += 10;
-  doc.fillColor(C.grey).font('Helvetica').fontSize(8.5)
-     .text('Devis valable 15 jours. La réservation est ferme à réception de l\'acompte et du contrat signé.', 40, y, { width: doc.page.width - 80 });
+  // Vérifier si on a encore la place pour la signature (au moins 100px)
+  const H = doc.page.height;
+  if (y > H - 150) {
+    doc.addPage();
+    y = 60;
+  }
+  signatureDevisBlock(doc, r, y);
 
   footer(doc, org);
   doc.end();
