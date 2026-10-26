@@ -147,8 +147,12 @@
   </aside>
 
   <div class="main">
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
     <div class="topbar">
-      <div class="topbar-title" id="topbarTitle">Tableau de bord</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="hamburger" onclick="openSidebar()" aria-label="Menu">☰</button>
+        <div class="topbar-title" id="topbarTitle">Tableau de bord</div>
+      </div>
       <div class="topbar-actions">
         <span class="topbar-badge" id="pendingBadge"></span>
         <button class="btn btn-navy" data-roles="admin,commercial,administratif" onclick="Res.openNew()">+ Nouvelle réservation</button>
@@ -272,6 +276,20 @@
 </div></div>
 
 <div id="toast"></div>
+<script>
+function openSidebar() {
+  document.querySelector('.sidebar').classList.add('open');
+  document.getElementById('sidebarOverlay').classList.add('open');
+}
+function closeSidebar() {
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+}
+// Ferme la sidebar lors d'un clic sur un nav-item (mobile)
+document.addEventListener('click', function(e) {
+  if (e.target.closest('.nav-item') && window.innerWidth <= 768) closeSidebar();
+});
+</script>
 <script src="/crm/app.js"></script>
 <script src="/crm/app2.js"></script>
 </body>
