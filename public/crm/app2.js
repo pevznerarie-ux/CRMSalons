@@ -344,7 +344,7 @@ Object.assign(Res, {
     return errors;
   },
   async save(){
-    const id=val('resId');const data=this.gather();const statut=val('f-statut');
+    const id=val('resId');const data=this.gather();const statut=val('f-statut')||'demande';
     try{
       if(id){
         await api('PUT','/reservations/'+id,data);
@@ -403,8 +403,8 @@ Object.assign(Res, {
         if(statut!=='demande') await api('POST',`/reservations/${res.id}/statut`,{statut});
         toast('✅ Réservation créée — '+res.reference);
         UI.closeModal('modalReservation');Res.load();Dash.load();if(Cal.inst)Cal.render();
-        // Proposition d'envoi du devis
-        if(data.email) Res._proposeDevis(res.id, res.reference, data.email, data.prenom);
+        // Proposition d'envoi du devis — délai pour laisser la modale réservation se fermer
+        if(data.email) setTimeout(()=>Res._proposeDevis(res.id, res.reference, data.email, data.prenom), 350);
       }catch(e){toast('❌ '+e.message,'error');}
     };
     UI.openModal('modalGeneric');

@@ -209,8 +209,44 @@ const Dash={
 // ─── CALENDRIER ───────────────────────────────────────────────────────────────
 const Cal={
   inst:null,
+  _activeSpaces: new Set(),
+  _activeSlots: new Set(),
+  _activeStatuts: new Set(['demande','option','confirme','acompte_recu','solde','contrat_envoye','devis_envoye']),
+
   load(){
+    // Légende couleurs salles
     document.getElementById('calLegend').innerHTML=CONFIG.spaces.map(s=>`<span><span class="cal-dot" style="background:${s.couleur}"></span>${UI.esc(s.nom)}</span>`).join('');
+
+    // Init tous actifs
+    this._activeSpaces = new Set(CONFIG.spaces.map(s=>s.id));
+    this._activeSlots  = new Set(CONFIG.time_slots.map(s=>s.id).concat(['']));
+
+    // Checkboxes salles
+    document.getElementById('calFilterSpaces').innerHTML = CONFIG.spaces.map(s=>`
+      <label class="cal-check-row">
+        <input type="checkbox" checked onchange="Cal._toggleSpace(${s.id},this.checked)">
+        <span class="cal-dot-sm" style="background:${s.couleur}"></span>
+        ${UI.esc(s.nom)}
+      </label>`).join('');
+
+    // Checkboxes plages
+    document.getElementById('calFilterSlots').innerHTML = CONFIG.time_slots.map(s=>`
+      <label class="cal-check-row">
+        <input type="checkbox" checked onchange="Cal._toggleSlot(${s.id},this.checked)">
+        ${UI.esc(s.nom)} <span class="cal-slot-time">${s.heure_debut||''}</span>
+      </label>`).join('') + `<label class="cal-check-row">
+        <input type="checkbox" checked onchange="Cal._toggleSlot('',this.checked)">
+        Sans plage
+      </label>`;
+
+    // Checkboxes statuts
+    const statutList = [['demande','Demande','#8E8E93'],['option','Option','#FF9F0A'],['devis_envoye','Devis envoyé','#30B0C7'],['confirme','Confirmé','#34C759'],['acompte_recu','Acompte reçu','#30D158'],['solde','Soldé','#1E3A5F'],['annule','Annulé','#FF453A']];
+    document.getElementById('calFilterStatuts').innerHTML = statutList.map(([v,l,c])=>`
+      <label class="cal-check-row">
+        <input type="checkbox" ${this._activeStatuts.has(v)?'checked':''} onchange="Cal._toggleStatut('${v}',this.checked)">
+        <span class="cal-dot-sm" style="background:${c}"></span>${l}
+      </label>`).join('');
+
     if(!this.inst){
       this.inst=new FullCalendar.Calendar(document.getElementById('calendar'),{
         initialView:'dayGridMonth',locale:'fr',firstDay:1,height:'auto',
@@ -218,18 +254,40 @@ const Cal={
         buttonText:{today:"Aujourd'hui",month:'Mois',week:'Semaine',list:'Liste'},
         eventClick:(info)=>Res.open(parseInt(info.event.id)),
         events:(info,success)=>this.fetch(info,success),
+        eventDidMount:(info)=>{
+          // Tooltip au survol
+          info.el.title=`${info.event.extendedProps.clientName||''} — ${info.event.extendedProps.slotLabel||''}\n${info.event.extendedProps.statutLabel||''}`;
+        },
+        dayCellClassNames:(arg)=>{
+          const today=new Date();today.setHours(0,0,0,0);
+          return arg.date<today?['past-day']:[];
+        },
       });
       this.inst.render();
     } else this.inst.refetchEvents();
   },
+
+  _toggleSpace(id,on){ on?this._activeSpaces.add(id):this._activeSpaces.delete(id); this.render(); },
+  _toggleSlot(id,on){ on?this._activeSlots.add(id):this._activeSlots.delete(id); this.render(); },
+  _toggleStatut(v,on){ on?this._activeStatuts.add(v):this._activeStatuts.delete(v); this.render(); },
+
   async fetch(info,success){
     const evs=await api('GET',`/calendar?from=${info.startStr.slice(0,10)}&to=${info.endStr.slice(0,10)}`);
-    const filter=document.getElementById('calFilterSpace').value;
-    success(evs.filter(e=>!filter||e.space_id==filter).map(e=>({
-      id:e.id,title:`${e.title} (${e.space_label})`,start:e.start,
-      end:e.end&&e.end!==e.start?addDay(e.end):null,allDay:true,
+    success(evs.filter(e=>{
+      if(!this._activeSpaces.has(e.space_id)) return false;
+      const slotId = e.time_slot_id||'';
+      if(!this._activeSlots.has(slotId) && !this._activeSlots.has(String(slotId))) return false;
+      if(!this._activeStatuts.has(e.statut)) return false;
+      return true;
+    }).map(e=>({
+      id:e.id,
+      title:`${e.title}`,
+      start:e.start,
+      end:e.end&&e.end!==e.start?addDay(e.end):null,
+      allDay:true,
       backgroundColor:e.color,borderColor:e.color,
-      classNames:['stat-'+e.statut],
+      extendedProps:{clientName:e.title,slotLabel:e.slot_label,statutLabel:STATUT_LABELS[e.statut]},
+      classNames:['stat-'+e.statut,'cal-event-pill'],
     })));
   },
   render(){if(this.inst)this.inst.refetchEvents();}

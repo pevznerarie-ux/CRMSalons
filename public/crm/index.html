@@ -173,11 +173,33 @@
 
       <!-- CALENDAR -->
       <div class="page" id="page-calendar">
-        <div class="card">
-          <div class="card-head"><span class="card-title">📅 Planning des salles</span>
-            <div class="card-actions"><select class="filter-select" id="calFilterSpace" onchange="Cal.render()"><option value="">Toutes les salles</option></select>
-            <span id="calLegend" class="cal-legend"></span></div></div>
-          <div style="padding:18px"><div id="calendar"></div></div>
+        <div class="cal-layout">
+          <!-- Sidebar filtres -->
+          <div class="cal-sidebar">
+            <div class="cal-filter-section">
+              <div class="cal-filter-title">🏛️ Salles</div>
+              <div id="calFilterSpaces"></div>
+            </div>
+            <div class="cal-filter-section" style="margin-top:16px">
+              <div class="cal-filter-title">⏰ Plages horaires</div>
+              <div id="calFilterSlots"></div>
+            </div>
+            <div class="cal-filter-section" style="margin-top:16px">
+              <div class="cal-filter-title">📊 Statuts</div>
+              <div id="calFilterStatuts"></div>
+            </div>
+            <div class="cal-filter-section" style="margin-top:20px">
+              <div class="cal-filter-title">Légende</div>
+              <span id="calLegend" class="cal-legend"></span>
+            </div>
+          </div>
+          <!-- Calendrier principal -->
+          <div class="cal-main card">
+            <div class="card-head"><span class="card-title">📅 Planning des salles</span>
+              <button class="btn btn-navy btn-sm" onclick="Res.openNew()">+ Nouvelle demande</button>
+            </div>
+            <div style="padding:18px"><div id="calendar"></div></div>
+          </div>
         </div>
       </div>
 

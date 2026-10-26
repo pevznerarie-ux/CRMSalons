@@ -431,7 +431,7 @@ app.get('/api/calendar', requireAuth, (req, res) => {
     id: r.id, reference: r.reference, title: `${r.prenom} ${r.nom} — ${L.types[r.event_type_id] || ''}`,
     start: r.date_evenement, end: r.date_fin || r.date_evenement,
     space_id: r.space_id, space_label: L.spaces[r.space_id] || '',
-    slot_label: L.slots[r.time_slot_id] || '', statut: r.statut,
+    time_slot_id: r.time_slot_id || '', slot_label: L.slots[r.time_slot_id] || '', statut: r.statut,
     color: spaceColors[r.space_id] || '#1E3A5F',
   })));
 });
