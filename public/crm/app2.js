@@ -52,11 +52,11 @@ Object.assign(Res, {
           </select></div>
       </div>
       <div class="form-grid cols3" style="margin-top:14px">
-        <div class="form-field"><label>Prix de base (€)</label><input type="number" id="f-prix_base" step="0.01" value="${r.prix_base||0}" oninput="Res.recalc()"></div>
-        <div class="form-field"><label>Remise (%)</label><input type="number" id="f-remise_pct" step="0.1" value="${r.remise_pct||0}" oninput="document.getElementById('f-remise_select').value='';Res.recalc()"></div>
-        <div class="form-field"><label>Remise fixe (€)</label><input type="number" id="f-remise_montant" step="0.01" value="${r.remise_montant||0}" oninput="document.getElementById('f-remise_select').value='';Res.recalc()"></div>
+        <div class="form-field"><label>Prix de base (€) <span style="font-size:11px;color:var(--text-3);font-weight:400">— hors options</span></label><input type="number" id="f-prix_base" step="0.01" value="${r.prix_base||0}" oninput="Res.recalc()"></div>
+        <div class="form-field"><label>Remise (%) <span style="font-size:11px;color:var(--text-3);font-weight:400">— sur le total</span></label><input type="number" id="f-remise_pct" step="0.1" value="${r.remise_pct||0}" oninput="document.getElementById('f-remise_select').value='';Res.recalc()"></div>
+        <div class="form-field"><label>Remise fixe (€) <span style="font-size:11px;color:var(--text-3);font-weight:400">— cumulable</span></label><input type="number" id="f-remise_montant" step="0.01" value="${r.remise_montant||0}" oninput="document.getElementById('f-remise_select').value='';Res.recalc()"></div>
       </div>
-      <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="Res.autoPrice()">🔄 Calculer le prix de base automatiquement</button>
+      <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="Res.autoPrice()">🔄 Appliquer une règle tarifaire automatiquement</button>
       <div class="form-section-title" style="margin-top:20px">➕ Options</div>
       <div id="optionsList">${CONFIG.options.map(o=>{const sel=(r.options||[]).find(x=>x.id===o.id);return `<div class="opt-row"><input type="checkbox" id="opt-${o.id}" data-id="${o.id}" data-prix="${o.prix}" data-unite="${o.unite}" ${sel?'checked':''} onchange="Res.recalc()"><label for="opt-${o.id}" style="flex:1">${UI.esc(o.nom)} — ${fmtEur(o.prix)} <span style="color:var(--text-lt)">/ ${o.unite.replace('_',' ')}</span></label>${o.unite!=='par_personne'?`<input type="number" min="1" value="${sel?sel.quantite:1}" id="optq-${o.id}" style="width:64px;padding:5px;border:1px solid var(--border);border-radius:6px" oninput="Res.recalc()">`:''}</div>`;}).join('')}</div>
       <div class="prix-recap">
@@ -94,10 +94,19 @@ Object.assign(Res, {
       <button class="btn btn-ghost" onclick="UI.closeModal('modalReservation')">Fermer</button>
       ${(editable||isReg)?`<button class="btn btn-navy" onclick="Res.save()">💾 Enregistrer</button>`:''}`;
 
-    // tabs
-    document.querySelectorAll('.res-tab').forEach(t=>t.onclick=()=>{
-      document.querySelectorAll('.res-tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');
-      document.querySelectorAll('#resModalBody .tab-pane').forEach(p=>p.classList.toggle('active',p.dataset.pane===t.dataset.tab));
+    // tabs — griser les onglets non disponibles pour une nouvelle réservation
+    const lockedTabs = ['paiements','documents','signature','historique'];
+    document.querySelectorAll('.res-tab').forEach(t=>{
+      const isLocked = !r.id && lockedTabs.includes(t.dataset.tab);
+      t.classList.toggle('tab-locked', isLocked);
+      t.title = isLocked ? 'Enregistrez d\'abord la réservation' : '';
+      t.onclick=()=>{
+        if(!r.id && lockedTabs.includes(t.dataset.tab)){
+          toast('💡 Enregistrez d\'abord la réservation pour accéder à cet onglet','info');return;
+        }
+        document.querySelectorAll('.res-tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');
+        document.querySelectorAll('#resModalBody .tab-pane').forEach(p=>p.classList.toggle('active',p.dataset.pane===t.dataset.tab));
+      };
     });
     document.querySelector('.res-tab[data-tab=client]').click();
 
@@ -136,9 +145,10 @@ Object.assign(Res, {
     this.recalc();
   },
   async autoPrice(){
-    const q=await api('POST','/quote',{space_id:+val('f-space_id')||null,event_type_id:+val('f-event_type_id')||null,time_slot_id:+val('f-time_slot_id')||null,date:val('f-date_evenement')});
+    if(!val('f-space_id')&&!val('f-event_type_id')){toast('💡 Sélectionnez une salle ou un type d\'événement pour calculer le prix automatiquement','info');return;}
+    try{const q=await api('POST','/quote',{space_id:+val('f-space_id')||null,event_type_id:+val('f-event_type_id')||null,time_slot_id:+val('f-time_slot_id')||null,date:val('f-date_evenement')});
     document.getElementById('f-prix_base').value=q.prix_base;
-    toast(q.rule?`Tarif appliqué : ${q.rule}`:'Aucune règle — saisissez le prix','info');this.recalc();
+    toast(q.rule?`✅ Tarif appliqué : ${q.rule}`:'💡 Aucune règle tarifaire trouvée — saisissez le prix manuellement','info');this.recalc();}catch(e){toast('❌ '+e.message,'error');}
   },
   async checkAvail(){
     const sp=val('f-space_id'),date=val('f-date_evenement'),slot=val('f-time_slot_id');
@@ -157,6 +167,22 @@ Object.assign(Res, {
     const cm=document.getElementById('f-commercial_id');if(cm)o.commercial_id=+cm.value||null;
     return o;
   },
+  validateForm(data){
+    const errors=[];
+    const highlight=(id,msg)=>{const el=document.getElementById(id);if(el){el.classList.add('field-error');el.addEventListener('input',()=>el.classList.remove('field-error'),{once:true});}errors.push(msg);};
+    // Champs obligatoires
+    if(!data.nom)highlight('f-nom','Nom obligatoire');
+    if(!data.prenom)highlight('f-prenom','Prénom obligatoire');
+    if(!data.telephone)highlight('f-telephone','Téléphone obligatoire');
+    if(!data.email)highlight('f-email','Email obligatoire');
+    if(!data.date_evenement)highlight('f-date_evenement','Date obligatoire');
+    // Avertissements (non bloquants mais on les signale)
+    if(!data.space_id) errors.push('⚠️ Aucune salle sélectionnée');
+    if(!data.event_type_id) errors.push('⚠️ Aucun type d\'événement sélectionné');
+    // Date dans le passé
+    if(data.date_evenement){const d=new Date(data.date_evenement);const today=new Date();today.setHours(0,0,0,0);if(d<today)errors.push('⚠️ La date est dans le passé');}
+    return errors;
+  },
   async save(){
     const id=val('resId');const data=this.gather();const statut=val('f-statut');
     try{
@@ -165,7 +191,18 @@ Object.assign(Res, {
         if(can('commercial','administratif') && this.current && statut!==this.current.statut) await api('POST',`/reservations/${id}/statut`,{statut});
         toast('✅ Réservation enregistrée');
       }else{
-        if(!data.nom||!data.prenom||!data.telephone||!data.email||!data.date_evenement){toast('❌ Nom, prénom, téléphone, email et date sont requis','error');return;}
+        const errors=this.validateForm(data);
+        const blocking=errors.filter(e=>!e.startsWith('⚠️'));
+        if(blocking.length){
+          // Scroll vers le premier champ en erreur
+          const firstErr=document.querySelector('.field-error');if(firstErr){document.querySelector('.res-tab[data-tab=client]').click();setTimeout(()=>firstErr.scrollIntoView({behavior:'smooth',block:'center'}),50);}
+          toast('❌ '+blocking[0],'error');return;
+        }
+        if(errors.length){// Avertissements non bloquants
+          const warn=errors.join(' · ');
+          // On continue mais on affiche un toast d'info
+          toast('💡 '+warn,'info');
+        }
         const res=await api('POST','/reservations',data);
         if(statut!=='demande') await api('POST',`/reservations/${res.id}/statut`,{statut});
         toast('✅ Réservation créée — '+res.reference);
@@ -182,11 +219,20 @@ Object.assign(Res, {
     const el=document.getElementById('payPane');if(!el)return;
     if(!r.id){el.innerHTML='<div class="alert alert-info">Enregistrez la réservation pour gérer les paiements.</div>';return;}
     const pays=r.payments||[];
+    // Calcul récapitulatif
+    const total=pays.reduce((s,p)=>s+p.montant,0);
+    const paye=pays.filter(p=>p.statut==='paye').reduce((s,p)=>s+p.montant,0);
+    const restant=total-paye;
     el.innerHTML=`<div class="form-section-title">💳 Échéancier de paiement</div>
-      ${pays.length?pays.map(p=>this.payRow(p,r)).join(''):'<div class="empty-state">Aucune échéance. Confirmez la réservation pour générer l\'acompte + le solde, ou ajoutez-en une.</div>'}
-      ${can('administratif','commercial')?`<div class="line-item" style="background:#fff;border:1px dashed var(--border);margin-top:10px">
+      <div class="pay-recap" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;padding:12px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">
+        <div class="pay-recap-item" style="flex:1;min-width:100px;text-align:center"><div style="font-size:11px;color:var(--text-lt);margin-bottom:2px">Total</div><div style="font-weight:700;font-size:16px">${fmtEur(total)}</div></div>
+        <div class="pay-recap-item" style="flex:1;min-width:100px;text-align:center"><div style="font-size:11px;color:var(--text-lt);margin-bottom:2px">Encaissé</div><div style="font-weight:700;font-size:16px;color:var(--green)">${fmtEur(paye)}</div></div>
+        <div class="pay-recap-item" style="flex:1;min-width:100px;text-align:center"><div style="font-size:11px;color:var(--text-lt);margin-bottom:2px">Restant dû</div><div style="font-weight:700;font-size:16px;color:${restant>0?'var(--red)':'var(--green)'}">${fmtEur(restant)}</div></div>
+      </div>
+      ${pays.length?pays.map(p=>this.payRow(p,r)).join(''):`<div class="empty-state">Aucune échéance.<br><span style="font-size:12px">Changez le statut en <b>Confirmé</b> et enregistrez pour générer automatiquement l'acompte et le solde.</span></div>`}
+      ${can('administratif','commercial')?`<div class="line-item" style="background:var(--surface);border:1px dashed var(--border);margin-top:10px;flex-wrap:wrap;gap:8px">
         <select id="np-type" class="filter-select"><option value="acompte">Acompte</option><option value="solde">Solde</option><option value="autre">Autre</option></select>
-        <input type="number" id="np-montant" placeholder="Montant €" style="width:110px;padding:8px;border:1px solid var(--border);border-radius:6px">
+        <input type="number" id="np-montant" placeholder="Montant €" style="width:110px;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text)">
         <input type="date" id="np-ech" class="filter-select" title="Échéance">
         <button class="btn btn-navy btn-sm" onclick="Res.addPayment(${r.id})">+ Ajouter</button></div>`:''}`;
   },
