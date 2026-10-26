@@ -206,5 +206,14 @@ function ensureColumn(table, column, definition) {
   }
 }
 ensureColumn('reservations', 'remise_label', "TEXT DEFAULT ''");
+// Signature électronique
+ensureColumn('reservations', 'signature_token',    "TEXT");
+ensureColumn('reservations', 'signed_client_at',   "TEXT");
+ensureColumn('reservations', 'signed_staff_at',    "TEXT");
+ensureColumn('reservations', 'signature_client_ip',"TEXT");
+ensureColumn('reservations', 'signature_staff_nom',"TEXT DEFAULT ''");
+// Reset de mot de passe
+ensureColumn('users', 'reset_token',         "TEXT");
+ensureColumn('users', 'reset_token_expires', "TEXT");
 
 module.exports = db;

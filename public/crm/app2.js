@@ -82,6 +82,8 @@ Object.assign(Res, {
       </div>
       ${r.id?`<button class="btn btn-gold btn-sm" style="margin-top:12px" onclick="Res.whatsapp()">💬 Notifier le régisseur (WhatsApp)</button>`:''}
     </div>
+    <!-- SIGNATURE -->
+    <div class="tab-pane" data-pane="signature"><div id="sigPane"></div></div>
     <!-- HISTORIQUE -->
     <div class="tab-pane" data-pane="historique"><div id="logPane"></div></div>`;
 
@@ -102,7 +104,7 @@ Object.assign(Res, {
     // commercial select (admin)
     if(ME.role==='admin'){ getUsers().then(us=>{ const w=document.getElementById('commercialWrap'); if(w) w.innerHTML=`<label>Commercial assigné</label><select id="f-commercial_id"><option value="">—</option>${us.filter(u=>['admin','commercial'].includes(u.role)).map(u=>`<option value="${u.id}" ${r.commercial_id==u.id?'selected':''}>${UI.esc(u.nom||u.email)}</option>`).join('')}</select>`; }); }
 
-    this.renderPayments(r); this.renderDocs(r); this.renderLog(r);
+    this.renderPayments(r); this.renderDocs(r); this.renderSig(r); this.renderLog(r);
     this.recalc();
     UI.openModal('modalReservation');
   },
@@ -213,7 +215,8 @@ Object.assign(Res, {
     el.innerHTML=`<div class="form-section-title">📄 Documents</div>
       ${can('commercial','administratif')?`<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
         <button class="btn btn-ghost btn-sm" onclick="Res.generateDoc('devis')">📄 Générer devis</button>
-        <button class="btn btn-ghost btn-sm" onclick="Res.generateDoc('contrat')">📑 Générer contrat</button></div>`:''}
+        <button class="btn btn-ghost btn-sm" onclick="Res.generateDoc('contrat')">📑 Générer contrat</button>
+        <button class="btn btn-gold btn-sm" onclick="Res.generateCerfa()">🧾 Reçu CERFA</button></div>`:''}
       ${docs.length?docs.map(d=>`<div class="line-item"><div class="li-main">${({devis:'📄',contrat:'📑',assurance:'🛡️',facture:'🧾'}[d.type]||'📎')} <b>${d.type}</b> — ${UI.esc(d.original_name||d.filename)} ${d.genere?'<span style="font-size:10px;color:var(--green)">(généré)</span>':''}<br><span style="font-size:11px;color:var(--text-lt)">${d.created_at}</span></div>
         <a href="/uploads/${d.filename}" target="_blank" class="btn btn-ghost btn-sm">Voir</a>
         ${can('commercial','administratif')?`<button class="btn btn-red btn-sm btn-icon" onclick="Res.delDoc(${d.id})">🗑️</button>`:''}</div>`).join(''):'<div class="empty-state">Aucun document</div>'}
@@ -225,6 +228,97 @@ Object.assign(Res, {
   async delDoc(did){await api('DELETE','/documents/'+did);await this.refresh(val('resId'));},
 
   renderLog(r){const el=document.getElementById('logPane');if(!el)return;const a=r.activity||[];el.innerHTML='<div class="form-section-title">🕓 Historique</div>'+(a.length?a.map(l=>`<div class="log-item"><b>${UI.esc(l.user_label)}</b> — ${UI.esc(l.action)} ${l.details?'· '+UI.esc(l.details):''}<br>${l.created_at}</div>`).join(''):'<div class="empty-state">Aucune activité</div>');},
+
+  // ONGLET SIGNATURE
+  renderSig(r) {
+    const el = document.getElementById('sigPane'); if (!el) return;
+    if (!r.id) { el.innerHTML = '<div class="alert alert-info">Enregistrez la réservation pour gérer la signature.</div>'; return; }
+    const clientSigned = !!r.signed_client_at;
+    const staffSigned  = !!r.signed_staff_at;
+    const sigUrl = r.signature_token ? `${location.origin}/signer/${r.signature_token}` : null;
+
+    el.innerHTML = `<div class="form-section-title">✍️ Signature électronique</div>
+      <div class="sig-status-row ${clientSigned ? 'signed' : 'unsigned'}">
+        <span class="sig-who">${clientSigned ? '✅' : '⏳'} Signature client</span>
+        <span class="sig-date">${clientSigned ? 'Signé le ' + fmtDate(r.signed_client_at) : 'En attente'}</span>
+        ${!clientSigned && can('commercial', 'administratif') ? `<button class="btn btn-navy btn-sm" onclick="Res.requestSignature()">📩 Envoyer le lien de signature</button>` : ''}
+      </div>
+      <div class="sig-status-row ${staffSigned ? 'signed' : 'unsigned'}">
+        <span class="sig-who">${staffSigned ? '✅' : '⏳'} Contresignature équipe</span>
+        <span class="sig-date">${staffSigned ? 'Signé le ' + fmtDate(r.signed_staff_at) + (r.signature_staff_nom ? ' par ' + UI.esc(r.signature_staff_nom) : '') : 'En attente'}</span>
+        ${!staffSigned && clientSigned && can('commercial', 'administratif') ? `<button class="btn btn-green btn-sm" onclick="Res.signStaff()">✍️ Contresigner</button>` : ''}
+      </div>
+      ${sigUrl ? `<div class="form-section-title" style="margin-top:16px">Lien de signature client</div>
+        <div class="sig-link-box">${sigUrl}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText('${sigUrl}').then(()=>toast('📋 Lien copié'))">📋 Copier</button>
+          <a href="${sigUrl}" target="_blank" class="btn btn-ghost btn-sm">🔗 Ouvrir</a>
+        </div>` : ''}
+      ${!sigUrl && can('commercial','administratif') ? '<div class="alert alert-info" style="margin-top:12px">Cliquez sur « Envoyer le lien de signature » pour générer un lien sécurisé.</div>' : ''}`;
+  },
+
+  async requestSignature() {
+    const id = val('resId'); if (!id) return;
+    try {
+      const res = await api('POST', `/reservations/${id}/request-signature`);
+      toast('✅ Email de signature envoyé au client');
+      await this.refresh(id);
+    } catch(e) { toast('❌ ' + e.message, 'error'); }
+  },
+
+  async signStaff() {
+    const id = val('resId'); if (!id) return;
+    const nom = ME.nom || ME.email;
+    try {
+      await api('POST', `/reservations/${id}/sign-staff`, { nom });
+      toast('✅ Contresignature enregistrée');
+      await this.refresh(id);
+    } catch(e) { toast('❌ ' + e.message, 'error'); }
+  },
+
+  // CERFA (depuis l'onglet documents)
+  async generateCerfa() {
+    const id = val('resId'); if (!id) return;
+    // Ouvrir un mini-formulaire CERFA
+    const g = document.getElementById('genBody');
+    const today = new Date().toISOString().slice(0,10);
+    g.innerHTML = `<div class="form-section-title">🧾 Reçu fiscal CERFA</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="form-field"><label>Montant (€)</label><input type="number" step="0.01" id="cerfa-montant" placeholder="Ex: 500.00"></div>
+        <div class="form-field"><label>Date du versement</label><input type="date" id="cerfa-date" value="${today}"></div>
+        <div class="form-field"><label>Objet / affectation</label><input id="cerfa-objet" placeholder="Don libre / Cotisation 2025…" value="Don libre"></div>
+        <div class="form-field"><label>Mode de paiement</label>
+          <select id="cerfa-moyen">
+            <option value="cheque">Chèque</option>
+            <option value="virement">Virement bancaire</option>
+            <option value="especes">Espèces</option>
+            <option value="cb">Carte bancaire</option>
+            <option value="helloasso">Paiement en ligne</option>
+          </select></div>
+      </div>`;
+    document.getElementById('genTitle').textContent = 'Générer un reçu fiscal CERFA';
+    document.getElementById('genFoot').innerHTML = `
+      <button class="btn btn-ghost" onclick="UI.closeModal('modalGeneric')">Annuler</button>
+      <button class="btn btn-navy" onclick="Res._submitCerfa()">🧾 Générer le reçu</button>`;
+    UI.openModal('modalGeneric');
+  },
+
+  async _submitCerfa() {
+    const id = val('resId');
+    const montant = parseFloat(document.getElementById('cerfa-montant').value) || 0;
+    const date_cerfa = document.getElementById('cerfa-date').value;
+    const objet_cerfa = document.getElementById('cerfa-objet').value;
+    const moyen_cerfa = document.getElementById('cerfa-moyen').value;
+    if (!montant) { toast('❌ Montant requis', 'error'); return; }
+    try {
+      UI.closeModal('modalGeneric');
+      await api('POST', `/reservations/${id}/documents/cerfa`, { montant_cerfa: montant, date_cerfa, objet_cerfa, moyen_cerfa });
+      toast('✅ Reçu CERFA généré');
+      await this.refresh(id);
+      // ouvrir l'onglet documents
+      document.querySelector('.res-tab[data-tab=documents]')?.click();
+    } catch(e) { toast('❌ ' + e.message, 'error'); }
+  },
 });
 
 // ─── PAIEMENTS (page globale) ──────────────────────────────────────────────────

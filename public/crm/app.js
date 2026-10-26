@@ -1,7 +1,7 @@
 // ════════════════════════════════════════════════════════════════════════════
 //  CRM Beth Menahem — logique de l'interface
 // ════════════════════════════════════════════════════════════════════════════
-let TOKEN = localStorage.getItem('crm_token') || '';
+let TOKEN = localStorage.getItem('crm_token') || sessionStorage.getItem('crm_token') || '';
 let ME = {};
 let CONFIG = { spaces: [], event_types: [], time_slots: [], options: [] };
 let RES_CACHE = [];
@@ -41,27 +41,112 @@ function confirmDialog(title,text,okLabel,cb){
 }
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
-document.getElementById('loginForm').addEventListener('submit',async e=>{
-  e.preventDefault();const err=document.getElementById('loginError');err.style.display='none';
-  try{
-    const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({username:loginUser.value,password:loginPass.value})});
-    const j=await r.json();if(!r.ok)throw new Error();
-    TOKEN=j.token;localStorage.setItem('crm_token',TOKEN);
-    if(j.must_change_password){document.getElementById('loginScreen').style.display='none';document.getElementById('forcePwScreen').style.display='flex';}
+
+// Afficher/masquer le mot de passe
+function togglePw(fieldId, btn) {
+  const inp = document.getElementById(fieldId);
+  if (!inp) return;
+  const showing = inp.type === 'text';
+  inp.type = showing ? 'password' : 'text';
+  // icône œil barré / ouvert
+  btn.querySelector('svg').innerHTML = showing
+    ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+    : '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+}
+
+// Navigation des panneaux login
+function showForgot() {
+  document.getElementById('loginPanel').style.display = 'none';
+  document.getElementById('forgotPanel').style.display = '';
+  document.getElementById('forgotEmail').focus();
+}
+function showLogin() {
+  document.getElementById('forgotPanel').style.display = 'none';
+  document.getElementById('resetPanel').style.display = 'none';
+  document.getElementById('loginPanel').style.display = '';
+}
+
+// Détecter un token reset dans l'URL (?reset=TOKEN)
+(function checkResetToken() {
+  const params = new URLSearchParams(location.search);
+  const rt = params.get('reset');
+  if (rt) {
+    window._resetToken = rt;
+    document.getElementById('loginPanel').style.display = 'none';
+    document.getElementById('resetPanel').style.display = '';
+  }
+})();
+
+document.getElementById('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const err = document.getElementById('loginError'); err.style.display = 'none';
+  try {
+    const remember = document.getElementById('rememberMe').checked;
+    const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: loginUser.value, password: loginPass.value, remember }) });
+    const j = await r.json(); if (!r.ok) throw new Error();
+    TOKEN = j.token;
+    if (remember) localStorage.setItem('crm_token', TOKEN);
+    else { sessionStorage.setItem('crm_token', TOKEN); localStorage.removeItem('crm_token'); }
+    if (j.must_change_password) { document.getElementById('loginScreen').style.display = 'none'; document.getElementById('forcePwScreen').style.display = 'flex'; }
     else boot();
-  }catch{err.textContent='Identifiants incorrects.';err.style.display='block';}
+  } catch { err.textContent = 'Identifiants incorrects.'; err.style.display = 'block'; }
 });
-document.getElementById('forcePwForm').addEventListener('submit',async e=>{
-  e.preventDefault();const err=document.getElementById('forcePwError');err.style.display='none';
-  const nw=forcePwNew.value,cf=forcePwConfirm.value;
-  if(nw!==cf){err.textContent='Les mots de passe ne correspondent pas.';err.style.display='block';return;}
-  if(nw.length<6){err.textContent='Minimum 6 caractères.';err.style.display='block';return;}
-  try{await api('PUT','/password',{newPass:nw});toast('✅ Mot de passe créé');document.getElementById('forcePwScreen').style.display='none';document.getElementById('loginScreen').style.display='flex';TOKEN='';localStorage.removeItem('crm_token');}
-  catch(e){err.textContent=e.message;err.style.display='block';}
+
+document.getElementById('forgotForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const err = document.getElementById('forgotError'); err.style.display = 'none';
+  const btn = e.target.querySelector('button[type=submit]'); btn.disabled = true;
+  try {
+    await fetch('/api/auth/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: document.getElementById('forgotEmail').value }) });
+    err.style.color = '#276749'; err.style.display = 'block';
+    err.textContent = '✅ Si cet email existe, vous recevrez un lien d\'ici quelques minutes.';
+  } catch { err.style.color = '#C53030'; err.textContent = 'Erreur réseau.'; err.style.display = 'block'; btn.disabled = false; }
 });
-function logout(){TOKEN='';localStorage.removeItem('crm_token');document.getElementById('app').style.display='none';document.getElementById('loginScreen').style.display='flex';}
-document.getElementById('btnLogout').addEventListener('click',logout);
+
+document.getElementById('resetForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const err = document.getElementById('resetError'); err.style.display = 'none';
+  const nw = document.getElementById('resetPass').value, cf = document.getElementById('resetPassConfirm').value;
+  if (nw !== cf) { err.textContent = 'Les mots de passe ne correspondent pas.'; err.style.display = 'block'; return; }
+  if (nw.length < 6) { err.textContent = 'Minimum 6 caractères.'; err.style.display = 'block'; return; }
+  try {
+    const r = await fetch('/api/auth/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: window._resetToken, newPass: nw }) });
+    const j = await r.json(); if (!r.ok) throw new Error(j.error || 'Lien invalide');
+    history.replaceState(null, '', location.pathname);
+    window._resetToken = null;
+    err.style.color = '#276749'; err.textContent = '✅ Mot de passe mis à jour. Vous pouvez vous connecter.'; err.style.display = 'block';
+    setTimeout(showLogin, 2000);
+  } catch (ex) { err.textContent = ex.message; err.style.display = 'block'; }
+});
+
+document.getElementById('forcePwForm').addEventListener('submit', async e => {
+  e.preventDefault(); const err = document.getElementById('forcePwError'); err.style.display = 'none';
+  const nw = forcePwNew.value, cf = forcePwConfirm.value;
+  if (nw !== cf) { err.textContent = 'Les mots de passe ne correspondent pas.'; err.style.display = 'block'; return; }
+  if (nw.length < 6) { err.textContent = 'Minimum 6 caractères.'; err.style.display = 'block'; return; }
+  try {
+    await api('PUT', '/password', { newPass: nw });
+    toast('✅ Mot de passe créé');
+    document.getElementById('forcePwScreen').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+    TOKEN = ''; localStorage.removeItem('crm_token'); sessionStorage.removeItem('crm_token');
+  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
+});
+
+function logout() {
+  TOKEN = ''; localStorage.removeItem('crm_token'); sessionStorage.removeItem('crm_token');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+document.getElementById('btnLogout').addEventListener('click', logout);
+
+// Token persistant (remember me) — lire aussi depuis sessionStorage
+(function restoreToken() {
+  TOKEN = localStorage.getItem('crm_token') || sessionStorage.getItem('crm_token') || '';
+})();
 
 async function boot(){
   try{ME=await api('GET','/me');}catch{return logout();}

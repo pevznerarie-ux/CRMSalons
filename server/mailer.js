@@ -127,7 +127,49 @@ const tplBienvenue = (email, tempPassword, roleLabel) => layout(`
   <p style="background:#FFF5F5;border-left:4px solid #E53E3E;padding:12px;border-radius:6px;font-size:13px;color:#C53030">
     ⚠️ Vous devrez définir votre propre mot de passe à la première connexion.</p>`);
 
+const tplResetPassword = (user, resetUrl) => layout(`
+  <p>Bonjour <strong>${user.prenom || user.nom || user.email}</strong>,</p>
+  <p>Vous avez demandé la réinitialisation de votre mot de passe. Cliquez sur le bouton ci-dessous pour en choisir un nouveau :</p>
+  <div style="text-align:center;margin:28px 0">
+    <a href="${resetUrl}" style="background:linear-gradient(135deg,#1E3A5F,#2d5a9e);color:#C9A84C;text-decoration:none;padding:16px 36px;border-radius:10px;font-size:16px;font-weight:700;display:inline-block;letter-spacing:.5px">
+      🔑 Réinitialiser mon mot de passe
+    </a>
+  </div>
+  <p style="font-size:13px;color:#718096">Ce lien est valable <strong>1 heure</strong>. Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email.</p>
+  <p style="font-size:12px;color:#999;word-break:break-all">Lien alternatif : <a href="${resetUrl}" style="color:#1E3A5F">${resetUrl}</a></p>`);
+
+const tplDemandeSignature = (r, sigUrl) => layout(`
+  <p>Bonjour <strong>${r.prenom} ${r.nom}</strong>,</p>
+  <p>Votre devis est prêt. Pour confirmer votre réservation, merci de le lire attentivement et d'apposer votre signature électronique.</p>
+  <table style="width:100%;border-collapse:collapse;margin:18px 0">
+    ${row('Référence', r.reference)}
+    ${row('Événement', r.type_label)}
+    ${row('Date', fmtDate(r.date_evenement))}
+    ${row('Salle', r.space_label)}
+    ${row('Total', fmtEur(r.total))}
+  </table>
+  <div style="text-align:center;margin:28px 0">
+    <a href="${sigUrl}" style="background:linear-gradient(135deg,#1E3A5F,#2d5a9e);color:#C9A84C;text-decoration:none;padding:18px 40px;border-radius:12px;font-size:17px;font-weight:700;display:inline-block;letter-spacing:.5px;box-shadow:0 4px 16px rgba(30,58,95,.3)">
+      ✍️ Lire et signer mon devis
+    </a>
+  </div>
+  <p style="font-size:13px;color:#718096">Ce lien est valable <strong>7 jours</strong>. Le devis complet est également joint en PDF à cet email.</p>
+  <p style="font-size:12px;color:#999">Pour toute question, contactez-nous${getSetting('org_telephone') ? ` au <strong>${getSetting('org_telephone')}</strong>` : ''}.</p>`);
+
+const tplSignatureConfirmee = (r, who = 'client') => layout(`
+  <p>${who === 'client' ? '🎉' : '✅'} <strong>${who === 'client' ? 'Signature client reçue' : 'Devis contresigné par l\'équipe'}</strong></p>
+  <p>Le devis <strong>${r.reference}</strong> vient d'être signé ${who === 'client' ? 'par <strong>' + r.prenom + ' ' + r.nom + '</strong>' : 'par l\'équipe'}.</p>
+  <table style="width:100%;border-collapse:collapse;margin:18px 0">
+    ${row('Client', `${r.prenom} ${r.nom}`)}
+    ${row('Événement', r.type_label)}
+    ${row('Date', fmtDate(r.date_evenement))}
+    ${row('Salle', r.space_label)}
+    ${row('Total', fmtEur(r.total))}
+  </table>
+  <p style="font-size:13px;color:#666">Connectez-vous au CRM pour traiter la suite.</p>`);
+
 module.exports = {
   sendMail, tplConfirmDemande, tplAlerteEquipe, tplDevis, tplConfirmation,
-  tplLienPaiement, tplRelance, tplBienvenue, row,
+  tplLienPaiement, tplRelance, tplBienvenue, tplResetPassword,
+  tplDemandeSignature, tplSignatureConfirmee, row,
 };

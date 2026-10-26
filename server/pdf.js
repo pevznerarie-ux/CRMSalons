@@ -2,7 +2,7 @@
 const PDFDocument = require('pdfkit');
 const fs   = require('fs');
 const path = require('path');
-const { fmtEur, fmtDate, getSettings } = require('./lib');
+const { fmtEur, fmtDate, getSetting, getSettings } = require('./lib');
 
 const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
@@ -135,4 +135,80 @@ function buildContrat(r) {
   return new Promise((resolve) => stream.on('finish', () => resolve({ filename })));
 }
 
-module.exports = { buildDevis, buildContrat };
+// ─── REÇU CERFA (don / association) ──────────────────────────────────────────
+function buildCerfa(r) {
+  const org = getSettings();
+  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  const filename = `cerfa-${r.reference}-${Date.now()}.pdf`;
+  const stream = fs.createWriteStream(path.join(uploadDir, filename));
+  doc.pipe(stream);
+
+  // En-tête CERFA
+  doc.rect(0, 0, doc.page.width, 90).fill(NAVY);
+  doc.fillColor(GOLD).fontSize(18).font('Helvetica-Bold').text(org.org_nom || "Salons d'Honneur Beth Menahem", 50, 24);
+  doc.fillColor('#fff').fontSize(9.5).font('Helvetica')
+     .text([org.org_adresse, org.org_telephone, org.org_email].filter(Boolean).join('  •  '), 50, 50);
+  doc.fillColor('#fff').fontSize(9).text(`N° SIRET : ${org.org_siret || '_______________'}   —   N° RNA / association : ${org.org_rna || '_______________'}`, 50, 66);
+
+  let y = 108;
+  doc.fillColor(DARK).fontSize(16).font('Helvetica-Bold')
+     .text('REÇU FISCAL', 50, y, { align: 'center', width: doc.page.width - 100 });
+  doc.fontSize(10).fillColor(GREY).font('Helvetica')
+     .text('(Article 200 du Code général des impôts)', 50, y + 22, { align: 'center', width: doc.page.width - 100 });
+  doc.moveTo(50, y + 42).lineTo(doc.page.width - 50, y + 42).strokeColor('#E2E8F0').stroke();
+  y += 60;
+
+  // Donateur
+  doc.fontSize(10).fillColor(GREY).font('Helvetica-Bold').text('DONATEUR', 50, y);
+  doc.fillColor(DARK).font('Helvetica').fontSize(11)
+     .text(`${r.prenom || ''} ${r.nom || ''}`.trim(), 50, y + 16);
+  if (r.adresse) doc.fontSize(10).fillColor(GREY).text(r.adresse, 50, doc.y);
+  doc.fontSize(10).fillColor(GREY).text([r.telephone, r.email].filter(Boolean).join('  •  '), 50, doc.y);
+  y = doc.y + 22;
+
+  // Tableau montant
+  const x = 50, w = doc.page.width - 100;
+  doc.rect(x, y, w, 28).fill(NAVY);
+  doc.fillColor('#fff').fontSize(11).font('Helvetica-Bold')
+     .text('MONTANT DU DON / DE LA COTISATION', x + 12, y + 8)
+     .text(fmtEur(r.montant_cerfa || r.total), x, y + 8, { width: w - 12, align: 'right' });
+  y += 28;
+  doc.rect(x, y, w, 28).fillAndStroke('#fff', '#E2E8F0');
+  doc.fillColor(GREY).font('Helvetica').fontSize(10)
+     .text('Date', x + 12, y + 9)
+     .text(fmtDate(r.date_cerfa || r.date_evenement || new Date().toISOString().slice(0, 10)), x, y + 9, { width: w - 12, align: 'right' });
+  y += 28;
+  doc.rect(x, y, w, 28).fillAndStroke('#F8F5EE', '#E2E8F0');
+  doc.fillColor(GREY).font('Helvetica').fontSize(10)
+     .text('Objet / affectation', x + 12, y + 9)
+     .text(r.objet_cerfa || getSetting('cerfa_objet', 'Don libre'), x, y + 9, { width: w - 12, align: 'right' });
+  y += 28;
+  doc.rect(x, y, w, 28).fillAndStroke('#fff', '#E2E8F0');
+  const modeLabel = { especes: 'Espèces', cheque: 'Chèque', virement: 'Virement bancaire', cb: 'Carte bancaire', helloasso: 'Paiement en ligne' };
+  doc.fillColor(GREY).font('Helvetica').fontSize(10)
+     .text('Mode de paiement', x + 12, y + 9)
+     .text(modeLabel[r.moyen_cerfa] || r.moyen_cerfa || '—', x, y + 9, { width: w - 12, align: 'right' });
+  y += 40;
+
+  // Attestation
+  doc.fontSize(10).fillColor(DARK).font('Helvetica')
+     .text(
+       `L'association ${org.org_nom || '___'} atteste que le versement de ${fmtEur(r.montant_cerfa || r.total)} effectué par ${r.prenom || ''} ${r.nom || ''} ` +
+       `est éligible à la réduction d'impôt prévue à l'article 200 du Code général des impôts, l'association n'accordant aucun avantage à ce donateur.`,
+       50, y, { width: w, align: 'justify' }
+     );
+  y = doc.y + 36;
+
+  // Signature
+  doc.fontSize(10).fillColor(DARK).font('Helvetica')
+     .text('Fait à _____________, le ' + new Date().toLocaleDateString('fr-FR'), 50, y)
+     .text('Signature et cachet du responsable', 0, y, { align: 'right' });
+  doc.moveTo(320, y + 50).lineTo(510, y + 50).strokeColor('#999').stroke();
+  y += 70;
+
+  footer(doc, org);
+  doc.end();
+  return new Promise((resolve) => stream.on('finish', () => resolve({ filename })));
+}
+
+module.exports = { buildDevis, buildContrat, buildCerfa };

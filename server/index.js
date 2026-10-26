@@ -10,7 +10,7 @@ const multer  = require('multer');
 const db = require('./db');
 require('./seed'); // garantit admin + config par défaut au démarrage
 const { now, genRef, getSetting, getSettings, setSetting, logActivity, STATUTS } = require('./lib');
-const { sign, requireAuth, requireRole, ROLE_LABELS } = require('./auth');
+const { sign, signResetToken, verifyResetToken, signSignatureToken, verifySignatureToken, requireAuth, requireRole, ROLE_LABELS } = require('./auth');
 const pricing = require('./pricing');
 const mailer  = require('./mailer');
 const pdf     = require('./pdf');
@@ -142,12 +142,49 @@ app.post('/api/devis', (req, res) => {
 
 // ─── AUTH ───────────────────────────────────────────────────────────────────
 app.post('/api/login', (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, remember } = req.body;
   const user = db.prepare('SELECT * FROM users WHERE email = ?').get((username || '').trim());
   if (!user || !user.active || !bcrypt.compareSync(password || '', user.password_hash)) {
     return res.status(401).json({ error: 'Identifiants incorrects' });
   }
-  res.json({ token: sign(user), email: user.email, nom: user.nom, role: user.role, must_change_password: !!user.must_change_password });
+  res.json({ token: sign(user, !!remember), email: user.email, nom: user.nom, role: user.role, must_change_password: !!user.must_change_password });
+});
+
+// ─── MOT DE PASSE OUBLIÉ ──────────────────────────────────────────────────────
+app.post('/api/auth/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  const user = db.prepare('SELECT * FROM users WHERE email = ? AND active = 1').get((email || '').trim());
+  // Toujours répondre OK (anti-énumération)
+  if (!user) return res.json({ success: true });
+  const token = signResetToken(user.id);
+  const expires = new Date(Date.now() + 3600000).toISOString();
+  db.prepare('UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE id = ?').run(token, expires, user.id);
+  const serverUrl = (process.env.SERVER_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
+  const resetUrl = `${serverUrl}/crm/index.html?reset=${token}`;
+  await mailer.sendMail({
+    to: user.email,
+    subject: 'Réinitialisation de votre mot de passe',
+    html: mailer.tplResetPassword(user, resetUrl),
+  }).catch(console.error);
+  res.json({ success: true });
+});
+
+app.post('/api/auth/reset-password', (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password || password.length < 6) return res.status(400).json({ error: 'Données invalides' });
+  try {
+    const userId = verifyResetToken(token);
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    if (!user || user.reset_token !== token) return res.status(400).json({ error: 'Lien invalide ou expiré' });
+    if (user.reset_token_expires && new Date(user.reset_token_expires) < new Date()) {
+      return res.status(400).json({ error: 'Lien expiré, veuillez recommencer' });
+    }
+    db.prepare('UPDATE users SET password_hash = ?, reset_token = NULL, reset_token_expires = NULL, must_change_password = 0 WHERE id = ?')
+      .run(bcrypt.hashSync(password, 10), user.id);
+    res.json({ success: true });
+  } catch {
+    res.status(400).json({ error: 'Token invalide' });
+  }
 });
 
 app.put('/api/password', requireAuth, (req, res) => {
@@ -593,6 +630,111 @@ app.get('/api/stats', requireAuth, (req, res) => {
     next_events: actifs.filter(r => r.date_evenement >= today)
       .sort((a, b) => a.date_evenement.localeCompare(b.date_evenement)).slice(0, 6).map(r => enrich(r, L)),
   });
+});
+
+// ─── SIGNATURE ÉLECTRONIQUE ───────────────────────────────────────────────────
+
+// Demander la signature (envoie le lien au client)
+app.post('/api/reservations/:id/request-signature', requireAuth, requireRole('commercial', 'administratif'), async (req, res) => {
+  try {
+    const r = getFull(req.params.id);
+    if (!r) return res.status(404).json({ error: 'Introuvable' });
+    const token = signSignatureToken(r.id, 'client');
+    db.prepare('UPDATE reservations SET signature_token = ?, updated_at = ? WHERE id = ?').run(token, now(), r.id);
+    const serverUrl = (process.env.SERVER_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
+    const sigUrl = `${serverUrl}/signer/${token}`;
+    const data = devisData(r);
+    // Générer PDF si pas encore fait
+    const { filename } = await pdf.buildDevis(data);
+    const attachments = [{ filename: `devis-${r.reference}.pdf`, path: path.join(uploadDir, filename) }];
+    await mailer.sendMail({
+      to: r.email,
+      subject: `Signature de votre devis — réf. ${r.reference}`,
+      html: mailer.tplDemandeSignature(r, sigUrl),
+      attachments,
+    });
+    logActivity(r.id, req.user, 'signature_demandee', `Lien envoyé à ${r.email}`);
+    res.json({ success: true, url: sigUrl });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Page publique de signature (renvoie les données du devis)
+app.get('/api/signer/:token', (req, res) => {
+  try {
+    const { sub: reservationId } = verifySignatureToken(req.params.token);
+    const r = getFull(reservationId);
+    if (!r) return res.status(404).json({ error: 'Réservation introuvable' });
+    if (r.signature_token !== req.params.token) return res.status(400).json({ error: 'Lien invalide' });
+    const data = devisData(r);
+    // Ne pas exposer les données internes
+    res.json({
+      reference: r.reference,
+      nom: r.nom, prenom: r.prenom,
+      type_label: r.type_label, space_label: r.space_label,
+      slot_label: r.slot_label, date_evenement: r.date_evenement,
+      nombre_personnes: r.nombre_personnes,
+      options: r.options,
+      prix_base: data.prix_base,
+      remise_calculee: data.remise_calculee,
+      total: data.total,
+      acompte_montant: data.acompte_montant,
+      signed_client_at: r.signed_client_at,
+      signed_staff_at: r.signed_staff_at,
+    });
+  } catch { res.status(400).json({ error: 'Lien expiré ou invalide' }); }
+});
+
+// Signer côté client (page publique, pas d'auth)
+app.post('/api/signer/:token/sign', (req, res) => {
+  try {
+    const { sub: reservationId, role } = verifySignatureToken(req.params.token);
+    const r = db.prepare('SELECT * FROM reservations WHERE id = ?').get(reservationId);
+    if (!r || r.signature_token !== req.params.token) return res.status(400).json({ error: 'Lien invalide' });
+    if (role !== 'client') return res.status(400).json({ error: 'Ce lien n\'est pas destiné au client' });
+    if (r.signed_client_at) return res.status(400).json({ error: 'Vous avez déjà signé ce devis' });
+    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.connection.remoteAddress || '';
+    db.prepare('UPDATE reservations SET signed_client_at = ?, signature_client_ip = ?, updated_at = ? WHERE id = ?')
+      .run(new Date().toISOString(), ip.trim(), now(), r.id);
+    logActivity(r.id, null, 'signature_client', `IP: ${ip}`);
+    // Notifier l'équipe
+    const manager = getSetting('org_email') || process.env.MANAGER_EMAIL;
+    const er = enrich(r);
+    if (manager) mailer.sendMail({
+      to: manager,
+      subject: `✍️ Devis signé par le client — réf. ${r.reference}`,
+      html: mailer.tplSignatureConfirmee(er, 'client'),
+    }).catch(console.error);
+    res.json({ success: true, message: 'Votre signature a bien été enregistrée.' });
+  } catch { res.status(400).json({ error: 'Lien expiré ou invalide' }); }
+});
+
+// Signer côté équipe (nécessite auth CRM)
+app.post('/api/reservations/:id/sign-staff', requireAuth, requireRole('commercial', 'administratif', 'admin'), (req, res) => {
+  const r = db.prepare('SELECT * FROM reservations WHERE id = ?').get(req.params.id);
+  if (!r) return res.status(404).json({ error: 'Introuvable' });
+  if (r.signed_staff_at) return res.status(400).json({ error: 'Déjà signé par l\'équipe' });
+  db.prepare('UPDATE reservations SET signed_staff_at = ?, signature_staff_nom = ?, updated_at = ? WHERE id = ?')
+    .run(new Date().toISOString(), req.user.nom || req.user.email, now(), r.id);
+  logActivity(r.id, req.user, 'signature_staff', `Signé par ${req.user.nom || req.user.email}`);
+  res.json({ success: true });
+});
+
+// Page publique signature (HTML)
+app.get('/signer/:token', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'signer.html'));
+});
+
+// ─── CERFA / REÇU FISCAL ─────────────────────────────────────────────────────
+app.post('/api/reservations/:id/documents/cerfa', requireAuth, requireRole('administratif', 'admin'), async (req, res) => {
+  try {
+    const r = getFull(req.params.id);
+    if (!r) return res.status(404).json({ error: 'Introuvable' });
+    const { filename } = await pdf.buildCerfa({ ...r, ...req.body });
+    db.prepare(`INSERT INTO documents (reservation_id, type, filename, original_name, genere) VALUES (?, 'cerfa', ?, ?, 1)`)
+      .run(r.id, filename, `cerfa-${r.reference}.pdf`);
+    logActivity(r.id, req.user, 'cerfa_genere');
+    res.json({ success: true, filename });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // ─── STATIQUE ────────────────────────────────────────────────────────────────
