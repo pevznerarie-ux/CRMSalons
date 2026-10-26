@@ -11,10 +11,117 @@ Object.assign(Res, {
   renderModal(r){
     const editable = can('commercial','administratif');
     const isReg = ME.role==='regisseur';
-    document.getElementById('resModalTitle').textContent = r.reference?`Réservation ${r.reference}`:'Nouvelle réservation';
+    document.getElementById('resModalTitle').textContent = r.reference?`Réservation ${r.reference}`:'Nouvelle demande';
     document.getElementById('resId').value = r.id||'';
     const opt=(arr,sel,ph)=>`<option value="">${ph||'—'}</option>`+arr.map(x=>`<option value="${x.id}" ${x.id==sel?'selected':''}>${UI.esc(x.nom)}</option>`).join('');
     const body=document.getElementById('resModalBody');
+
+    // ══════════════════════════════════════════════════════
+    // NOUVELLE RÉSERVATION → flow sections accordéon
+    // ══════════════════════════════════════════════════════
+    if(!r.id){
+      // Cacher les onglets, tout est dans un seul scroll
+      document.getElementById('resTabs').style.display='none';
+      body.innerHTML=`<input type="hidden" id="resId" value="">
+      <div class="new-res-flow">
+
+        <!-- SECTION 1 : CLIENT -->
+        <div class="nrf-section open" id="nrfs-client">
+          <div class="nrf-header" onclick="Res._toggleSection('client')">
+            <span class="nrf-num">1</span>
+            <span class="nrf-label">Client</span>
+            <span class="nrf-summary" id="nrfs-client-summary"></span>
+            <span class="nrf-chevron">▾</span>
+          </div>
+          <div class="nrf-body">
+            <div class="form-grid">
+              <div class="form-field"><label>Nom *</label><input id="f-nom" placeholder="Dupont" oninput="Res._updateSummary('client')"></div>
+              <div class="form-field"><label>Prénom *</label><input id="f-prenom" placeholder="Marie" oninput="Res._updateSummary('client')"></div>
+              <div class="form-field"><label>Téléphone *</label><input id="f-telephone" placeholder="06 00 00 00 00"></div>
+              <div class="form-field"><label>Email *</label><input id="f-email" placeholder="marie@exemple.fr"></div>
+              <div class="form-field"><label>Société</label><input id="f-societe" value=""></div>
+              <div class="form-field"><label>Source</label><select id="f-source">${['site','telephone','recommandation','salon','reseaux','autre'].map(s=>`<option>${s}</option>`).join('')}</select></div>
+              <div class="form-field span2"><label>Message client</label><textarea id="f-message_client"></textarea></div>
+              <div class="form-field span2" id="commercialWrap"></div>
+            </div>
+            <button class="btn btn-navy nrf-next" onclick="Res._nextSection('client','evenement')">Suivant : Événement →</button>
+          </div>
+        </div>
+
+        <!-- SECTION 2 : ÉVÉNEMENT -->
+        <div class="nrf-section" id="nrfs-evenement">
+          <div class="nrf-header" onclick="Res._toggleSection('evenement')">
+            <span class="nrf-num">2</span>
+            <span class="nrf-label">Événement</span>
+            <span class="nrf-summary" id="nrfs-evenement-summary"></span>
+            <span class="nrf-chevron">▾</span>
+          </div>
+          <div class="nrf-body">
+            <div class="form-grid">
+              <div class="form-field"><label>Type d'événement</label><select id="f-event_type_id" onchange="Res.checkAvail();Res._updateSummary('evenement')">${opt(CONFIG.event_types,r.event_type_id)}</select></div>
+              <div class="form-field"><label>Salle / espace</label><select id="f-space_id" onchange="Res.checkAvail();Res._updateSummary('evenement')">${opt(CONFIG.spaces,r.space_id)}</select></div>
+              <div class="form-field"><label>Date *</label><input type="date" id="f-date_evenement" value="" onchange="Res.checkAvail();Res._updateSummary('evenement')"></div>
+              <div class="form-field"><label>Plage horaire</label><select id="f-time_slot_id" onchange="Res.checkAvail()">${opt(CONFIG.time_slots,r.time_slot_id)}</select></div>
+              <div class="form-field"><label>Nombre de personnes</label><input type="number" id="f-nombre_personnes" min="0" value="" oninput="Res.recalc()"></div>
+              <div class="form-field"><label>Adresse client</label><input id="f-adresse" value=""></div>
+            </div>
+            <div id="availBox"></div>
+            <button class="btn btn-navy nrf-next" style="margin-top:12px" onclick="Res._nextSection('evenement','tarif')">Suivant : Tarification →</button>
+          </div>
+        </div>
+
+        <!-- SECTION 3 : TARIF -->
+        <div class="nrf-section" id="nrfs-tarif">
+          <div class="nrf-header" onclick="Res._toggleSection('tarif')">
+            <span class="nrf-num">3</span>
+            <span class="nrf-label">Tarification</span>
+            <span class="nrf-summary" id="nrfs-tarif-summary"></span>
+            <span class="nrf-chevron">▾</span>
+          </div>
+          <div class="nrf-body">
+            <input type="hidden" id="f-remise_label" value="">
+            <div class="form-grid">
+              <div class="form-field span2"><label>🏷️ Remise prédéfinie</label>
+                <select id="f-remise_select" onchange="Res.applyRemise()">
+                  <option value="">— Aucune remise —</option>
+                  ${CONFIG.discounts.map(d=>`<option value="${d.id}">${UI.esc(d.libelle)} — ${d.type==='pct'?d.valeur+' %':fmtEur(d.valeur)}</option>`).join('')}
+                </select></div>
+            </div>
+            <div class="form-grid cols3" style="margin-top:10px">
+              <div class="form-field"><label>Prix de base (€)</label><input type="number" id="f-prix_base" step="0.01" value="0" oninput="Res.recalc();Res._updateSummary('tarif')"></div>
+              <div class="form-field"><label>Remise (%)</label><input type="number" id="f-remise_pct" step="0.1" value="0" oninput="document.getElementById('f-remise_select').value='';Res.recalc()"></div>
+              <div class="form-field"><label>Remise fixe (€)</label><input type="number" id="f-remise_montant" step="0.01" value="0" oninput="document.getElementById('f-remise_select').value='';Res.recalc()"></div>
+            </div>
+            <button class="btn btn-ghost btn-sm" style="margin:8px 0 16px" onclick="Res.autoPrice()">🔄 Calculer automatiquement</button>
+            <div class="form-section-title">➕ Options</div>
+            <div id="optionsList">${CONFIG.options.map(o=>`<div class="opt-row"><input type="checkbox" id="opt-${o.id}" data-id="${o.id}" data-prix="${o.prix}" data-unite="${o.unite}" onchange="Res.recalc()"><label for="opt-${o.id}" style="flex:1">${UI.esc(o.nom)} — ${fmtEur(o.prix)} <span style="color:var(--text-lt)">/ ${o.unite.replace('_',' ')}</span></label>${o.unite!=='par_personne'?`<input type="number" min="1" value="1" id="optq-${o.id}" style="width:64px;padding:5px;border:1px solid var(--border);border-radius:6px" oninput="Res.recalc()">`:''}</div>`).join('')}</div>
+            <div class="prix-recap" style="margin-top:14px">
+              <div class="prix-item"><div class="p-label">Sous-total</div><div class="p-val" id="rc-sous">0 €</div></div>
+              <div class="prix-item"><div class="p-label">Remise</div><div class="p-val" id="rc-remise">0 €</div></div>
+              <div class="prix-item total"><div class="p-label">Total net</div><div class="p-val" id="rc-total">0 €</div></div>
+            </div>
+            <div class="form-grid" style="margin-top:14px"><div class="form-field"><label>Acompte demandé (€)</label><input type="number" id="f-acompte_montant" step="0.01" value="0"></div></div>
+          </div>
+        </div>
+
+      </div>`;
+
+      // Footer simplifié pour nouvelle réservation
+      document.getElementById('resModalFoot').innerHTML=`
+        <button class="btn btn-ghost" onclick="UI.closeModal('modalReservation')">Annuler</button>
+        <button class="btn btn-navy" onclick="Res.save()">✅ Enregistrer la demande</button>`;
+
+      // Admin : commercial
+      if(ME.role==='admin'){ getUsers().then(us=>{ const w=document.getElementById('commercialWrap'); if(w) w.innerHTML=`<label>Commercial assigné</label><select id="f-commercial_id"><option value="">—</option>${us.filter(u=>['admin','commercial'].includes(u.role)).map(u=>`<option value="${u.id}">${UI.esc(u.nom||u.email)}</option>`).join('')}</select>`; }); }
+      this.recalc();
+      UI.openModal('modalReservation');
+      return;
+    }
+
+    // ══════════════════════════════════════════════════════
+    // RÉSERVATION EXISTANTE → onglets habituels
+    // ══════════════════════════════════════════════════════
+    document.getElementById('resTabs').style.display='';
     body.innerHTML=`<input type="hidden" id="resId" value="${r.id||''}">
     <!-- CLIENT -->
     <div class="tab-pane active" data-pane="client">
@@ -89,44 +196,24 @@ Object.assign(Res, {
 
     // footer
     const foot=document.getElementById('resModalFoot');
+    // Statut : calculer le statut suggéré automatiquement
+    const autoStatut = Res._computeAutoStatut(r);
     let statutSel = `<select id="f-statut" class="filter-select" ${!can('commercial','administratif')?'disabled':''}>${Object.entries(STATUT_LABELS).map(([v,l])=>`<option value="${v}" ${r.statut===v?'selected':''}>${l}</option>`).join('')}</select>`;
-    foot.innerHTML=`<div style="margin-right:auto;display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--text-lt)">Statut</span>${statutSel}</div>
+    const autoHint = autoStatut && autoStatut!==r.statut ? `<button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="document.getElementById('f-statut').value='${autoStatut}';toast('Statut suggéré appliqué','info')" title="Statut suggéré selon l'état du dossier">⚡ → ${STATUT_LABELS[autoStatut]}</button>` : '';
+    foot.innerHTML=`<div style="margin-right:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:12px;color:var(--text-lt)">Statut</span>${statutSel}${autoHint}</div>
       <button class="btn btn-ghost" onclick="UI.closeModal('modalReservation')">Fermer</button>
       ${(editable||isReg)?`<button class="btn btn-navy" onclick="Res.save()">💾 Enregistrer</button>`:''}`;
 
-    // tabs — griser les onglets non disponibles pour une nouvelle réservation
-    const lockedTabs = ['paiements','documents','signature','historique'];
+    // tabs
     document.querySelectorAll('.res-tab').forEach(t=>{
-      const isLocked = !r.id && lockedTabs.includes(t.dataset.tab);
-      t.classList.toggle('tab-locked', isLocked);
-      t.title = isLocked ? 'Enregistrez d\'abord la réservation' : '';
+      t.classList.remove('tab-locked');
+      t.title='';
       t.onclick=()=>{
-        if(!r.id && lockedTabs.includes(t.dataset.tab)){
-          toast('💡 Enregistrez d\'abord la réservation pour accéder à cet onglet','info');return;
-        }
         document.querySelectorAll('.res-tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');
         document.querySelectorAll('#resModalBody .tab-pane').forEach(p=>p.classList.toggle('active',p.dataset.pane===t.dataset.tab));
-        // Auto-tarification quand on arrive sur l'onglet Tarif (nouvelle réservation)
-        if(t.dataset.tab==='tarif' && !r.id && numv('f-prix_base')===0){
-          const sp=document.getElementById('f-space_id')?.value;
-          const dt=document.getElementById('f-date_evenement')?.value;
-          if(sp&&dt) Res.autoPrice();
-        }
       };
     });
     document.querySelector('.res-tab[data-tab=client]').click();
-
-    // Indicateur de progression pour nouvelle réservation
-    if(!r.id){
-      const tabBar = document.querySelector('.res-tabs');
-      if(tabBar && !document.getElementById('newResHint')){
-        const hint = document.createElement('div');
-        hint.id = 'newResHint';
-        hint.style.cssText = 'padding:8px 16px;background:var(--accent-bg);border-bottom:1px solid var(--border);font-size:12px;color:var(--accent);display:flex;align-items:center;gap:8px';
-        hint.innerHTML = '✨ <strong>Nouvelle demande</strong> — Remplissez <b>Client</b> puis <b>Tarif</b>, puis cliquez sur Enregistrer';
-        tabBar.parentNode.insertBefore(hint, tabBar);
-      }
-    }
 
     // commercial select (admin)
     if(ME.role==='admin'){ getUsers().then(us=>{ const w=document.getElementById('commercialWrap'); if(w) w.innerHTML=`<label>Commercial assigné</label><select id="f-commercial_id"><option value="">—</option>${us.filter(u=>['admin','commercial'].includes(u.role)).map(u=>`<option value="${u.id}" ${r.commercial_id==u.id?'selected':''}>${UI.esc(u.nom||u.email)}</option>`).join('')}</select>`; }); }
@@ -134,6 +221,61 @@ Object.assign(Res, {
     this.renderPayments(r); this.renderDocs(r); this.renderSig(r); this.renderLog(r);
     this.recalc();
     UI.openModal('modalReservation');
+  },
+
+  // Calcule le statut suggéré automatiquement selon l'état du dossier
+  _computeAutoStatut(r){
+    if(!r.id) return null;
+    const pays = r.payments||[];
+    const docs = r.documents||[];
+    const totalPaye = pays.filter(p=>p.statut==='paye').reduce((s,p)=>s+p.montant,0);
+    const total = pays.reduce((s,p)=>s+p.montant,0);
+    const hasContrat = docs.some(d=>d.type==='contrat');
+    const hasDevis = docs.some(d=>d.type==='devis');
+    const bothSigned = r.signed_client_at && r.signed_staff_at;
+    // Logique d'auto-statut
+    if(total>0 && totalPaye>=total) return 'solde';
+    if(bothSigned) return 'confirme';
+    if(totalPaye>0 && totalPaye<total) return 'acompte_recu';
+    if(hasContrat) return 'contrat_envoye';
+    if(hasDevis) return 'devis_envoye';
+    return null;
+  },
+
+  // Sections accordéon (nouvelle réservation)
+  _toggleSection(id){
+    const el=document.getElementById('nrfs-'+id);
+    if(!el)return;
+    el.classList.toggle('open');
+  },
+  _nextSection(from,to){
+    document.getElementById('nrfs-'+from)?.classList.remove('open');
+    const next=document.getElementById('nrfs-'+to);
+    if(next){next.classList.add('open');next.scrollIntoView({behavior:'smooth',block:'nearest'});}
+    // Auto-tarif quand on arrive à la section tarif
+    if(to==='tarif' && numv('f-prix_base')===0){
+      const sp=document.getElementById('f-space_id')?.value;
+      const dt=document.getElementById('f-date_evenement')?.value;
+      if(sp&&dt) Res.autoPrice();
+    }
+  },
+  _updateSummary(section){
+    const el=document.getElementById('nrfs-'+section+'-summary');
+    if(!el)return;
+    if(section==='client'){
+      const n=val('f-nom'),p=val('f-prenom');
+      el.textContent=(n||p)?`${p} ${n}`.trim():'';
+    } else if(section==='evenement'){
+      const d=val('f-date_evenement');
+      const sp=CONFIG.spaces.find(s=>s.id==val('f-space_id'));
+      const parts=[];
+      if(d) parts.push(new Date(d).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}));
+      if(sp) parts.push(sp.nom);
+      el.textContent=parts.join(' — ');
+    } else if(section==='tarif'){
+      const t=document.getElementById('rc-total');
+      el.textContent=t?t.textContent:'';
+    }
   },
 
   selectedOptions(){
@@ -261,10 +403,33 @@ Object.assign(Res, {
         if(statut!=='demande') await api('POST',`/reservations/${res.id}/statut`,{statut});
         toast('✅ Réservation créée — '+res.reference);
         UI.closeModal('modalReservation');Res.load();Dash.load();if(Cal.inst)Cal.render();
+        // Proposition d'envoi du devis
+        if(data.email) Res._proposeDevis(res.id, res.reference, data.email, data.prenom);
       }catch(e){toast('❌ '+e.message,'error');}
     };
     UI.openModal('modalGeneric');
   },
+  async _proposeDevis(id, ref, email, prenom){
+    const g=document.getElementById('genBody');
+    g.innerHTML=`<div style="text-align:center;padding:8px 0 16px">
+      <div style="font-size:40px;margin-bottom:8px">📄</div>
+      <div style="font-size:15px;font-weight:600;margin-bottom:6px">Demande créée — ${UI.esc(ref)}</div>
+      <div style="font-size:13px;color:var(--text-3);margin-bottom:16px">Voulez-vous envoyer le devis par email à<br><b>${UI.esc(prenom||'')} (${UI.esc(email)})</b> ?</div>
+    </div>`;
+    document.getElementById('genTitle').textContent='✉️ Envoyer le devis ?';
+    document.getElementById('genFoot').innerHTML=`
+      <button class="btn btn-ghost" onclick="UI.closeModal('modalGeneric')">Non, plus tard</button>
+      <button class="btn btn-navy" id="genSendDevis">📧 Oui, envoyer maintenant</button>`;
+    document.getElementById('genSendDevis').onclick=async()=>{
+      UI.closeModal('modalGeneric');
+      try{
+        await api('POST',`/reservations/${id}/send-devis`);
+        toast('📧 Devis envoyé à '+email);
+      }catch(e){toast('❌ '+e.message,'error');}
+    };
+    UI.openModal('modalGeneric');
+  },
+
   async generateDoc(type){try{await api('POST',`/reservations/${val('resId')}/documents/generate`,{type});toast('✅ '+(type==='contrat'?'Contrat':'Devis')+' généré');const r=await api('GET','/reservations/'+val('resId'));this.renderDocs(r);}catch(e){toast('❌ '+e.message,'error');}},
   async sendDevis(){try{await api('POST',`/reservations/${val('resId')}/send-devis`);toast('✅ Devis envoyé au client');}catch(e){toast('❌ '+e.message,'error');}},
   async whatsapp(){try{const {url}=await api('GET',`/reservations/${val('resId')}/whatsapp`);window.open(url,'_blank');}catch(e){toast('❌ '+e.message,'error');}},
