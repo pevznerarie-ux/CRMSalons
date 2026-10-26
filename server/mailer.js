@@ -192,7 +192,7 @@ const tplAlerteEquipe = (r) => layout(`
   ${note('Connectez-vous au CRM pour traiter cette demande.')}
 `, { subtitle: 'Notification interne' });
 
-const tplDevis = (r, lignesHtml) => layout(`
+const tplDevis = (r, lignesHtml, sigUrl = null) => layout(`
   ${hello(r)}
   <p style="font-size:16px;color:#2A2117;margin:0 0 8px">
     Veuillez trouver ci-dessous votre devis. Le document complet est joint en PDF à cet email.
@@ -235,6 +235,29 @@ const tplDevis = (r, lignesHtml) => layout(`
       </td>
     </tr>` : ''}
   </table>
+  ${sigUrl ? `
+  <!-- ── CTA Signature intégré ─────────────────────────────────────── -->
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#221C14;border-radius:4px;margin:0 0 28px">
+    <tr>
+      <td style="padding:32px 32px 24px;text-align:center">
+        <p style="margin:0 0 4px;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:13px;color:rgba(181,139,69,.6);letter-spacing:1px">
+          Prochaine étape
+        </p>
+        <p style="margin:0 0 20px;font-family:Cinzel,'Times New Roman',serif;font-size:15px;font-weight:700;color:#C9A84C;letter-spacing:2px;text-transform:uppercase">
+          Accepter &amp; signer votre devis
+        </p>
+        <p style="margin:0 0 24px;font-family:'Cormorant Garamond',Georgia,serif;font-size:15px;color:rgba(244,238,226,.75);line-height:1.6">
+          En un clic, lisez les conditions générales, acceptez le devis<br>et apposez votre signature électronique.
+        </p>
+        <a href="${sigUrl}" style="display:inline-block;background:#B58B45;color:#221C14;font-family:Cinzel,'Times New Roman',serif;font-size:12px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;text-decoration:none;padding:18px 48px;border-radius:2px">
+          ✍️ &nbsp; Lire, accepter et signer
+        </a>
+        <p style="margin:18px 0 0;font-family:'Cormorant Garamond',Georgia,serif;font-size:12px;color:rgba(181,139,69,.45);font-style:italic">
+          Ce lien est valable 7 jours &nbsp;·&nbsp; Sécurisé &amp; confidentiel
+        </p>
+      </td>
+    </tr>
+  </table>` : ''}
   ${note(`⏱ Ce devis est valable <strong>15 jours</strong>. La réservation est ferme à réception de l'acompte et du contrat signé.`)}
   <p style="font-size:15px;color:#6B5744;margin:0">
     Pour toute question${getSetting('org_telephone') ? `, contactez-nous au <strong style="color:#221C14">${getSetting('org_telephone')}</strong>` : ', n\'hésitez pas à nous contacter'}.

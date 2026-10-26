@@ -586,18 +586,22 @@ app.post('/api/reservations/:id/send-devis', requireAuth, requireRole('commercia
     const { filename } = await pdf.buildDevis(data);
     db.prepare(`INSERT INTO documents (reservation_id, type, filename, original_name, genere) VALUES (?, 'devis', ?, ?, 1)`)
       .run(r.id, filename, `devis-${r.reference}.pdf`);
-    db.prepare("UPDATE reservations SET statut = CASE WHEN statut='demande' THEN 'devis_envoye' ELSE statut END, updated_at=? WHERE id=?").run(now(), r.id);
+    // Générer le token de signature pour l'inclure directement dans le mail
+    const sigToken = signSignatureToken(r.id, 'client');
+    db.prepare('UPDATE reservations SET signature_token = ?, statut = CASE WHEN statut=\'demande\' THEN \'devis_envoye\' ELSE statut END, updated_at=? WHERE id=?').run(sigToken, now(), r.id);
     logActivity(r.id, req.user, 'devis_envoye');
+    const serverUrl = (process.env.SERVER_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
+    const sigUrl = `${serverUrl}/signer/${sigToken}`;
     const lignes = mailer.row(`Location — ${data.space_label || 'salle'}`, fmtEur(data.prix_base))
       + data.options.map(o => mailer.row(o.nom + (o.unite === 'par_personne' ? ` (${o.quantite} pers.)` : (o.quantite > 1 ? ` ×${o.quantite}` : '')), fmtEur(o.total))).join('');
     const attachments = [{ filename: `devis-${r.reference}.pdf`, path: path.join(uploadDir, filename) }];
     try {
-      await mailer.sendMail({ to: r.email, subject: `Votre devis — réf. ${r.reference}`, html: mailer.tplDevis(data, lignes), attachments });
+      await mailer.sendMail({ to: r.email, subject: `Votre devis — réf. ${r.reference}`, html: mailer.tplDevis(data, lignes, sigUrl), attachments });
     } catch (mailErr) {
       // Le PDF est généré et enregistré : on signale juste l'échec d'envoi, sans planter
       return res.status(502).json({ error: "Devis généré mais l'email n'a pas pu être envoyé : " + mailErr.message, filename });
     }
-    res.json({ success: true, filename });
+    res.json({ success: true, filename, sigUrl });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

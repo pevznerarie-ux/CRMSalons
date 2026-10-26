@@ -32,99 +32,153 @@ const C = {
   creamMd: '#EDE5D6',
 };
 
-// ── Logo / Monogramme ─────────────────────────────────────────────────────────
-function drawMonogram(doc, x, y, size = 40) {
-  // Cercle or autour du monogramme BM
-  doc.circle(x + size / 2, y + size / 2, size / 2).fillAndStroke(C.navy, C.gold);
-  doc.fillColor(C.gold).fontSize(size * 0.38).font('Helvetica-Bold')
-     .text('BM', x, y + size * 0.3, { width: size, align: 'center' });
-}
-
 // ── En-tête ───────────────────────────────────────────────────────────────────
 function header(doc, org, titre, ref) {
   const W = doc.page.width;
-  // Bande navy pleine hauteur
-  doc.rect(0, 0, W, 110).fill(C.navy);
-  // Trait or fin en bas de la bande
-  doc.rect(0, 107, W, 3).fill(C.gold);
+  // Bande sombre pleine hauteur
+  doc.rect(0, 0, W, 120).fill(C.dark);
+  // Accent or gauche (trait vertical élégant)
+  doc.rect(0, 0, 5, 120).fill(C.gold);
+  // Liseré or en bas de l'en-tête
+  doc.rect(0, 117, W, 2).fill(C.gold);
+  // Dégradé crème sous l'en-tête (bande légère)
+  doc.rect(0, 119, W, 8).fill(C.creamMd);
 
-  // Logo à gauche — fond blanc derrière car PNG sur fond blanc
-  const logoW = 170, logoH = 65;
-  const logoX = 28, logoY = 22;
+  const logoW = 180, logoH = 68;
+  const logoX = 28, logoY = 26;
   if (fs.existsSync(LOGO_PATH)) {
-    // Fond blanc arrondi pour isoler le logo sur la bande navy
-    doc.roundedRect(logoX - 6, logoY - 4, logoW + 12, logoH + 8, 4).fill(C.white);
     doc.image(LOGO_PATH, logoX, logoY, { width: logoW, height: logoH, fit: [logoW, logoH] });
   } else {
-    // Fallback monogramme
-    drawMonogram(doc, 38, 30, 48);
+    // Monogramme premium
     const nom = org.org_nom || "Salons d'Honneur Beth Menahem";
-    doc.fillColor(C.gold).fontSize(11).font('Helvetica-Bold').text(nom, 98, 34, { width: W - 240 });
+    // Cercle or
+    doc.circle(logoX + 22, logoY + 22, 22).fillAndStroke(C.dark, C.gold).lineWidth(1.5);
+    doc.fillColor(C.gold).fontSize(13).font('Times-Bold')
+       .text('BM', logoX + 9, logoY + 14, { width: 44, align: 'center' });
+    // Nom établissement
+    doc.fillColor(C.gold).fontSize(13).font('Times-Bold')
+       .text(nom, logoX + 52, logoY + 8, { width: W - 260, lineGap: 2 });
+    const s = org.org_slogan || 'Salle de réception & événements';
+    doc.fillColor('rgba(201,168,76,0.55)').fontSize(9).font('Times-Roman')
+       .text(s, logoX + 52, doc.y + 2, { width: W - 260 });
   }
 
   // Coordonnées sous le logo
   const coord = [org.org_adresse, org.org_telephone, org.org_email].filter(Boolean).join('  ·  ');
-  doc.fillColor(C.goldLt).fontSize(7.5).font('Helvetica')
-     .text(coord || '', logoX, logoY + logoH + 2, { width: logoW + 60 });
+  if (coord) {
+    doc.fillColor('rgba(232,208,138,0.55)').fontSize(7.5).font('Helvetica')
+       .text(coord, logoX, logoY + logoH - 2, { width: logoW + 40 });
+  }
 
-  // Titre du document (côté droit) — aligné à droite
-  const titreX = W - 140;
-  doc.fillColor(C.white).fontSize(14).font('Helvetica-Bold')
-     .text(titre, titreX, 30, { width: 110, align: 'right' });
-  doc.fillColor(C.goldLt).fontSize(8.5).font('Helvetica')
-     .text(`Réf. ${ref}`, titreX, 54, { width: 110, align: 'right' });
-  doc.fillColor(C.goldLt).fontSize(8.5)
-     .text(new Date().toLocaleDateString('fr-FR'), titreX, 67, { width: 110, align: 'right' });
+  // Cartouche titre/ref à droite — fond légèrement plus clair
+  const cX = W - 165, cW = 145;
+  doc.roundedRect(cX, 18, cW, 84, 3).fill('#2E2416');
+  // Trait or gauche du cartouche
+  doc.rect(cX, 18, 2, 84).fill(C.gold);
 
-  return 128;
+  doc.fillColor('rgba(201,168,76,0.5)').fontSize(7.5).font('Helvetica')
+     .text('DOCUMENT', cX + 10, 26, { width: cW - 12, align: 'center', characterSpacing: 1.5 });
+  doc.fillColor(C.gold).fontSize(17).font('Times-Bold')
+     .text(titre, cX + 10, 37, { width: cW - 12, align: 'center' });
+  // Séparateur
+  doc.rect(cX + 16, 62, cW - 32, 0.5).fill(C.goldSite);
+  doc.fillColor('rgba(232,208,138,0.6)').fontSize(7.5).font('Helvetica')
+     .text('RÉFÉRENCE', cX + 10, 68, { width: cW - 12, align: 'center', characterSpacing: 1 });
+  doc.fillColor(C.goldLt).fontSize(10).font('Helvetica-Bold')
+     .text(ref, cX + 10, 79, { width: cW - 12, align: 'center', characterSpacing: 0.5 });
+
+  return 140;
 }
 
 // ── Bloc client ───────────────────────────────────────────────────────────────
 function clientBlock(doc, r, y) {
   const W = doc.page.width;
-  // Fond crème doux
-  doc.rect(40, y, W / 2 - 55, 80).fillAndStroke(C.cream, C.lightLine);
-  // Label section
-  doc.fillColor(C.navy).fontSize(8).font('Helvetica-Bold')
-     .text('CLIENT', 54, y + 10);
-  doc.fillColor(C.dark).font('Helvetica').fontSize(11)
-     .text(`${r.prenom} ${r.nom}`, 54, y + 23);
-  if (r.societe) doc.fontSize(9.5).fillColor(C.grey).text(r.societe, 54, doc.y + 1);
-  if (r.adresse) doc.fontSize(9).fillColor(C.grey).text(r.adresse, 54, doc.y + 1);
-  doc.fontSize(9).fillColor(C.grey)
-     .text([r.telephone, r.email].filter(Boolean).join('   •   '), 54, doc.y + 1);
+  const x = 40, w = W - 80;
+  const colW = (w - 16) / 2;
 
-  return y + 94;
+  // Ligne titre section
+  doc.rect(x, y, w, 22).fill(C.dark);
+  doc.rect(x, y, 3, 22).fill(C.gold);
+  doc.fillColor(C.gold).fontSize(7).font('Helvetica-Bold')
+     .text('CLIENT', x + 10, y + 7, { characterSpacing: 2 });
+  // Petite date à droite
+  doc.fillColor('rgba(201,168,76,0.5)').fontSize(7.5).font('Helvetica')
+     .text(new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }), x + 10, y + 7, { width: w - 14, align: 'right' });
+  y += 22;
+
+  // Col gauche — info client
+  const h = 68;
+  doc.rect(x, y, colW, h).fillAndStroke(C.cream, C.border);
+  doc.rect(x, y, 3, h).fill(C.goldSite);
+
+  doc.fillColor(C.dark).fontSize(12).font('Times-Bold')
+     .text(`${r.prenom} ${r.nom}`, x + 12, y + 10, { width: colW - 20 });
+  let ty = doc.y + 3;
+  if (r.societe) {
+    doc.fillColor(C.warm).fontSize(9).font('Helvetica').text(r.societe, x + 12, ty, { width: colW - 20 });
+    ty = doc.y + 2;
+  }
+  if (r.adresse) {
+    doc.fillColor(C.muted).fontSize(8.5).font('Helvetica').text(r.adresse, x + 12, ty, { width: colW - 20 });
+    ty = doc.y + 2;
+  }
+  const contact = [r.telephone, r.email].filter(Boolean).join('  ·  ');
+  if (contact) doc.fillColor(C.muted).fontSize(8).font('Helvetica').text(contact, x + 12, ty, { width: colW - 20 });
+
+  // Col droite — émetteur (établissement)
+  const cx2 = x + colW + 16;
+  doc.rect(cx2, y, colW, h).fillAndStroke('#F0EAE0', C.border);
+  const s = getSettings();
+  doc.fillColor(C.dark).fontSize(9).font('Helvetica-Bold')
+     .text('Établissement', cx2 + 12, y + 10, { width: colW - 20 });
+  doc.fillColor(C.warm).fontSize(9.5).font('Times-Roman')
+     .text(s.org_nom || "Salons d'Honneur Beth Menahem", cx2 + 12, y + 24, { width: colW - 20 });
+  if (s.org_adresse) doc.fillColor(C.muted).fontSize(8.5).font('Helvetica')
+     .text(s.org_adresse, cx2 + 12, doc.y + 2, { width: colW - 20 });
+  if (s.org_telephone) doc.fillColor(C.muted).fontSize(8.5).font('Helvetica')
+     .text(s.org_telephone, cx2 + 12, doc.y + 2, { width: colW - 20 });
+
+  return y + h + 14;
 }
 
 // ── Bloc événement ────────────────────────────────────────────────────────────
 function eventBlock(doc, r, y) {
   const W = doc.page.width;
-  doc.rect(40, y, W - 80, 28).fill(C.navy);
-  doc.fillColor(C.gold).fontSize(9).font('Helvetica-Bold')
-     .text('ÉVÉNEMENT', 56, y + 9);
+  const x = 40, w = W - 80;
 
-  const cols = [[0, 'Type', r.type_label], [1, 'Date', fmtDate(r.date_evenement)],
-                [2, 'Horaire', r.slot_label], [3, 'Salle', r.space_label],
-                [4, 'Invités', r.nombre_personnes ? `${r.nombre_personnes} pers.` : '']
-               ].filter(c => c[2]);
-  const colW = (W - 80) / Math.min(cols.length, 3);
+  doc.rect(x, y, w, 22).fill(C.dark);
+  doc.rect(x, y, 3, 22).fill(C.gold);
+  doc.fillColor(C.gold).fontSize(7).font('Helvetica-Bold')
+     .text('DÉTAILS DE L\'ÉVÉNEMENT', x + 10, y + 7, { characterSpacing: 2 });
+  y += 22;
 
-  let yy = y + 28;
-  let rowCount = 0;
-  const chunk = 3;
-  for (let i = 0; i < cols.length; i += chunk) {
-    const row = cols.slice(i, i + chunk);
-    doc.rect(40, yy, W - 80, 38).fillAndStroke(rowCount % 2 === 0 ? C.cream : C.white, C.lightLine);
-    row.forEach(([, label, val], j) => {
-      const cx = 40 + j * colW;
-      doc.fillColor(C.grey).fontSize(8).font('Helvetica-Bold').text(label.toUpperCase(), cx + 12, yy + 7, { width: colW - 12 });
-      doc.fillColor(C.dark).fontSize(10).font('Helvetica').text(val || '—', cx + 12, yy + 18, { width: colW - 20 });
-    });
-    yy += 38;
-    rowCount++;
+  const cols = [
+    ['Type', r.type_label],
+    ['Date', fmtDate(r.date_evenement)],
+    ['Horaire', r.slot_label],
+    ['Salle', r.space_label],
+    r.nombre_personnes ? ['Invités', `${r.nombre_personnes} personnes`] : null,
+  ].filter(Boolean);
+
+  const ncols = Math.min(cols.length, 4);
+  const colW = w / ncols;
+  const rowH = 44;
+
+  for (let i = 0; i < cols.length; i++) {
+    const cx = x + (i % ncols) * colW;
+    const row = Math.floor(i / ncols);
+    const cy = y + row * rowH;
+    const bg = (Math.floor(i / ncols) % 2 === 0) ? C.creamSoft : C.cream;
+    doc.rect(cx, cy, colW, rowH).fillAndStroke(bg, C.border);
+    if (i % ncols === 0) doc.rect(cx, cy, 3, rowH).fill(C.goldSite);
+    doc.fillColor(C.muted).fontSize(7).font('Helvetica-Bold')
+       .text((cols[i][0]).toUpperCase(), cx + 10, cy + 9, { width: colW - 16, characterSpacing: 1 });
+    doc.fillColor(C.brown).fontSize(11).font('Times-Roman')
+       .text(cols[i][1] || '—', cx + 10, cy + 20, { width: colW - 16 });
   }
-  return yy + 12;
+
+  const rows = Math.ceil(cols.length / ncols);
+  return y + rows * rowH + 14;
 }
 
 // ── Tableau financier ─────────────────────────────────────────────────────────
@@ -132,22 +186,27 @@ function table(doc, r, y) {
   const W = doc.page.width;
   const x = 40, w = W - 80;
 
-  // En-tête du tableau
-  doc.rect(x, y, w, 26).fill(C.navy);
-  doc.fillColor(C.gold).fontSize(9).font('Helvetica-Bold')
-     .text('DÉSIGNATION', x + 12, y + 8, { width: w / 2 })
-     .text('MONTANT', x, y + 8, { width: w - 12, align: 'right' });
+  // En-tête tableau
+  doc.rect(x, y, w, 22).fill(C.dark);
+  doc.rect(x, y, 3, 22).fill(C.gold);
+  doc.fillColor(C.gold).fontSize(7).font('Helvetica-Bold')
+     .text('DÉSIGNATION', x + 10, y + 7, { width: w * 0.6, characterSpacing: 2 });
+  doc.fillColor(C.gold).fontSize(7).font('Helvetica-Bold')
+     .text('MONTANT TTC', x + 10, y + 7, { width: w - 14, align: 'right', characterSpacing: 2 });
+  y += 22;
 
-  let yy = y + 26;
   let alt = false;
-  const line = (label, montant, bold, highlight) => {
-    const bg = highlight ? '#EBF5EE' : (alt ? C.cream : C.white);
-    doc.rect(x, yy, w, 24).fillAndStroke(bg, C.lightLine);
-    doc.fillColor(highlight ? C.green : C.dark)
-       .font(bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(10)
-       .text(label, x + 12, yy + 7, { width: w - 110 })
-       .text(fmtEur(montant), x, yy + 7, { width: w - 12, align: 'right' });
-    yy += 24;
+  const line = (label, montant, bold = false, isRemise = false) => {
+    const bg = alt ? C.cream : C.white;
+    const lineH = 26;
+    doc.rect(x, y, w, lineH).fillAndStroke(bg, C.border);
+    const textColor = isRemise ? C.warm : C.brown;
+    doc.fillColor(textColor).font(bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(10)
+       .text(label, x + 12, y + 8, { width: w * 0.6 });
+    const amtColor = isRemise ? C.warm : (montant < 0 ? C.warm : C.brown);
+    doc.fillColor(amtColor).font(bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(10)
+       .text(fmtEur(montant), x + 10, y + 8, { width: w - 16, align: 'right' });
+    y += lineH;
     alt = !alt;
   };
 
@@ -157,41 +216,52 @@ function table(doc, r, y) {
     line(`${o.nom}${q}`, o.total);
   }
   if (r.remise_calculee > 0) {
-    line(`Remise${r.remise_pct ? ` (${r.remise_pct}%)` : ''}${r.remise_label ? ` — ${r.remise_label}` : ''}`, -r.remise_calculee, false, false);
+    line(`Remise${r.remise_pct ? ` (${r.remise_pct}%)` : ''}${r.remise_label ? ` — ${r.remise_label}` : ''}`, -r.remise_calculee, false, true);
   }
 
-  // Ligne Total
-  doc.rect(x, yy, w, 34).fillAndStroke(C.navy, C.navy);
-  doc.rect(x + w - 200, yy, 200, 34).fill(C.gold);
-  doc.fillColor(C.white).font('Helvetica-Bold').fontSize(11)
-     .text('TOTAL NET', x + 12, yy + 11);
-  doc.fillColor(C.navyDk).font('Helvetica-Bold').fontSize(14)
-     .text(fmtEur(r.total), x, yy + 9, { width: w - 12, align: 'right' });
-  yy += 34;
+  // ── Ligne Total (bloc signature visuelle) ─────────────────────────────────
+  const totalH = 42;
+  doc.rect(x, y, w, totalH).fill(C.dark);
+  // Accent or à gauche du total
+  doc.rect(x, y, 4, totalH).fill(C.gold);
+  // Pastille montant en fond or
+  doc.rect(x + w - 185, y + 4, 181, totalH - 8).fillAndStroke(C.gold, C.gold);
+  doc.fillColor(C.goldLt).fontSize(8).font('Helvetica-Bold')
+     .text('TOTAL NET TTC', x + 14, y + 8, { characterSpacing: 1.5 });
+  doc.fillColor('rgba(201,168,76,0.45)').fontSize(7.5).font('Helvetica')
+     .text('Toutes taxes comprises', x + 14, y + 22);
+  doc.fillColor(C.dark).fontSize(18).font('Times-Bold')
+     .text(fmtEur(r.total), x + w - 185, y + 9, { width: 177, align: 'center' });
+  y += totalH;
 
   if (r.acompte_montant > 0) {
-    doc.rect(x, yy, w, 24).fillAndStroke(C.cream, C.lightLine);
-    doc.fillColor(C.grey).font('Helvetica').fontSize(9.5)
-       .text(`Acompte à verser à la réservation`, x + 12, yy + 7)
-       .text(fmtEur(r.acompte_montant), x, yy + 7, { width: w - 12, align: 'right' });
-    yy += 24;
+    doc.rect(x, y, w, 26).fillAndStroke('#F7F2EA', C.border);
+    doc.rect(x, y, 3, 26).fill(C.goldSite);
+    doc.fillColor(C.warm).font('Helvetica').fontSize(9.5)
+       .text('Acompte à la réservation', x + 12, y + 8);
+    doc.fillColor(C.goldSite).font('Helvetica-Bold').fontSize(11)
+       .text(fmtEur(r.acompte_montant), x + 10, y + 7, { width: w - 16, align: 'right' });
+    y += 26;
   }
-  return yy + 16;
+  return y + 16;
 }
 
 // ── Pied de page ──────────────────────────────────────────────────────────────
 function footer(doc, org) {
   const W = doc.page.width, H = doc.page.height;
-  // Trait or en haut du pied
-  doc.rect(40, H - 54, W - 80, 1).fill(C.gold);
-  const contact = [org.org_nom, org.org_adresse, org.org_telephone, org.org_email].filter(Boolean).join('   •   ');
-  doc.fillColor(C.grey).fontSize(8.5).font('Helvetica')
-     .text(contact || '', 40, H - 46, { align: 'center', width: W - 80 });
-  // Numéro de page
+  // Bande de pied
+  doc.rect(0, H - 46, W, 46).fill(C.dark);
+  doc.rect(0, H - 46, W, 2).fill(C.gold);
+  doc.rect(0, H - 46, 4, 46).fill(C.gold);
+
+  const contact = [org.org_nom, org.org_adresse, org.org_telephone, org.org_email].filter(Boolean).join('   ·   ');
+  doc.fillColor('rgba(201,168,76,0.55)').fontSize(8).font('Helvetica')
+     .text(contact || '', 16, H - 32, { align: 'center', width: W - 32 });
+
   const pages = doc.bufferedPageRange ? doc.bufferedPageRange() : null;
   if (pages) {
-    doc.fillColor(C.creamMd).fontSize(8)
-       .text(`Page ${pages.start + pages.count}`, W - 80, H - 46, { width: 40, align: 'right' });
+    doc.fillColor('rgba(201,168,76,0.3)').fontSize(7.5).font('Helvetica')
+       .text(`${pages.start + pages.count}`, W - 50, H - 22, { width: 34, align: 'right' });
   }
 }
 
@@ -200,41 +270,42 @@ function conditionsBlock(doc, r, y) {
   const W = doc.page.width;
   const x = 40, w = W - 80;
 
-  // Titre section
-  doc.rect(x, y, w, 26).fill(C.navy);
-  doc.fillColor(C.gold).fontSize(9).font('Helvetica-Bold')
-     .text('CONDITIONS DE RÈGLEMENT', x + 12, y + 8);
-  y += 26;
+  doc.rect(x, y, w, 22).fill(C.dark);
+  doc.rect(x, y, 3, 22).fill(C.gold);
+  doc.fillColor(C.gold).fontSize(7).font('Helvetica-Bold')
+     .text('CONDITIONS DE RÈGLEMENT', x + 10, y + 7, { characterSpacing: 2 });
+  y += 22;
 
   const total = r.total || 0;
   const acompte = r.acompte_montant || Math.round(total * 0.3);
   const solde = total - acompte;
 
   // Ligne acompte
-  doc.rect(x, y, w, 32).fillAndStroke(C.cream, C.lightLine);
-  doc.fillColor(C.navy).font('Helvetica-Bold').fontSize(9)
-     .text('Acompte à la réservation (30%)', x + 12, y + 8);
-  doc.fillColor(C.green).font('Helvetica-Bold').fontSize(12)
-     .text(fmtEur(acompte), x, y + 7, { width: w - 12, align: 'right' });
-  doc.fillColor(C.grey).font('Helvetica').fontSize(8)
-     .text('À verser à la signature du contrat', x + 12, y + 20);
-  y += 32;
+  doc.rect(x, y, w, 34).fillAndStroke(C.cream, C.border);
+  doc.rect(x, y, 3, 34).fill(C.goldSite);
+  doc.fillColor(C.brown).font('Helvetica-Bold').fontSize(9.5)
+     .text('Acompte à la réservation', x + 12, y + 8);
+  doc.fillColor(C.green).font('Helvetica-Bold').fontSize(13)
+     .text(fmtEur(acompte), x + 12, y + 7, { width: w - 20, align: 'right' });
+  doc.fillColor(C.muted).font('Helvetica').fontSize(8)
+     .text('À verser à la signature du contrat', x + 12, y + 23);
+  y += 34;
 
   // Ligne solde
-  doc.rect(x, y, w, 32).fillAndStroke(C.white, C.lightLine);
-  doc.fillColor(C.dark).font('Helvetica-Bold').fontSize(9)
+  doc.rect(x, y, w, 34).fillAndStroke(C.white, C.border);
+  doc.fillColor(C.brown).font('Helvetica-Bold').fontSize(9.5)
      .text('Solde restant dû', x + 12, y + 8);
-  doc.fillColor(C.dark).font('Helvetica-Bold').fontSize(12)
-     .text(fmtEur(solde), x, y + 7, { width: w - 12, align: 'right' });
-  doc.fillColor(C.grey).font('Helvetica').fontSize(8)
-     .text('À verser 30 jours avant l\'événement', x + 12, y + 20);
-  y += 32;
+  doc.fillColor(C.brown).font('Helvetica-Bold').fontSize(13)
+     .text(fmtEur(solde), x + 12, y + 7, { width: w - 20, align: 'right' });
+  doc.fillColor(C.muted).font('Helvetica').fontSize(8)
+     .text('À verser 30 jours avant l\'événement', x + 12, y + 23);
+  y += 34;
 
-  // Moyens de paiement acceptés
-  doc.rect(x, y, w, 24).fillAndStroke(C.creamMd, C.lightLine);
-  doc.fillColor(C.grey).font('Helvetica').fontSize(8.5)
-     .text('Moyens de paiement acceptés : Virement bancaire · Chèque bancaire · Espèces', x + 12, y + 7);
-  y += 24;
+  // Moyens de paiement
+  doc.rect(x, y, w, 22).fillAndStroke('#F0EAE0', C.border);
+  doc.fillColor(C.warm).font('Helvetica').fontSize(8.5)
+     .text('Moyens de paiement acceptés : Virement bancaire  ·  Chèque bancaire  ·  Espèces', x + 12, y + 7);
+  y += 22;
 
   return y + 12;
 }
@@ -243,46 +314,51 @@ function conditionsBlock(doc, r, y) {
 function validiteBlock(doc, r, y) {
   const W = doc.page.width;
   const x = 40, w = W - 80;
-  // Fond bleu ciel très léger
-  doc.rect(x, y, w, 46).fillAndStroke('#EBF0F8', C.lightLine);
-  // Trait gauche bleu
-  doc.rect(x, y, 4, 46).fill(C.navy);
-  doc.fillColor(C.navy).font('Helvetica-Bold').fontSize(9)
-     .text('Ce devis est valable 15 jours à compter de sa date d\'émission.', x + 16, y + 8, { width: w - 24 });
-  doc.fillColor(C.grey).font('Helvetica').fontSize(8.5)
+  doc.rect(x, y, w, 48).fillAndStroke(C.cream, C.border);
+  doc.rect(x, y, 4, 48).fill(C.goldSite);
+  doc.fillColor(C.brown).font('Helvetica-Bold').fontSize(9)
+     .text('⏱  Ce devis est valable 15 jours à compter de sa date d\'émission.', x + 14, y + 10, { width: w - 24 });
+  doc.fillColor(C.muted).font('Helvetica').fontSize(8.5)
      .text('La réservation sera confirmée à réception de l\'acompte et du contrat signé. ' +
-           'Toute annulation devra être notifiée par écrit.', x + 16, y + 22, { width: w - 24 });
-  return y + 56;
+           'Toute annulation devra être notifiée par écrit.', x + 14, y + 24, { width: w - 24 });
+  return y + 60;
 }
 
 // ── Zone signature devis ───────────────────────────────────────────────────────
 function signatureDevisBlock(doc, r, y) {
   const W = doc.page.width;
   const x = 40, w = W - 80;
-  // Séparateur or
-  doc.rect(x, y, w, 1).fill(C.gold);
-  y += 16;
 
-  const colW = (w - 20) / 2;
+  doc.rect(x, y, w, 22).fill(C.dark);
+  doc.rect(x, y, 3, 22).fill(C.gold);
+  doc.fillColor(C.gold).fontSize(7).font('Helvetica-Bold')
+     .text('SIGNATURES', x + 10, y + 7, { characterSpacing: 2 });
+  y += 22;
 
-  // Col gauche — prestataire
-  doc.fillColor(C.dark).font('Helvetica-Bold').fontSize(9)
-     .text('Pour l\'établissement', x, y);
-  doc.fillColor(C.grey).font('Helvetica').fontSize(8.5)
-     .text(new Date().toLocaleDateString('fr-FR'), x, y + 14);
-  doc.rect(x, y + 56, colW, 1).fill(C.navy);
-  doc.fillColor(C.grey).fontSize(8).text('Signature et cachet', x, y + 60, { width: colW, align: 'center' });
+  const colW = (w - 12) / 2;
+  const sigH = 80;
+
+  // Col gauche — établissement
+  doc.rect(x, y, colW, sigH).fillAndStroke(C.cream, C.border);
+  doc.rect(x, y, 3, sigH).fill(C.goldSite);
+  doc.fillColor(C.brown).font('Helvetica-Bold').fontSize(9)
+     .text('Pour l\'établissement', x + 12, y + 12);
+  doc.fillColor(C.muted).font('Helvetica').fontSize(8)
+     .text(new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }), x + 12, y + 26);
+  doc.rect(x + 12, y + sigH - 18, colW - 24, 0.5).fill(C.border);
+  doc.fillColor(C.muted).fontSize(7.5).text('Signature et cachet', x + 12, y + sigH - 13, { width: colW - 24, align: 'center' });
 
   // Col droite — client
-  const cx = x + colW + 20;
-  doc.fillColor(C.dark).font('Helvetica-Bold').fontSize(9)
-     .text('Le client (bon pour accord)', cx, y);
-  doc.fillColor(C.grey).font('Helvetica').fontSize(8.5)
-     .text('Nom, date et lieu :', cx, y + 14);
-  doc.rect(cx, y + 56, colW, 1).fill(C.navy);
-  doc.fillColor(C.grey).fontSize(8).text('Signature précédée de « Lu et approuvé »', cx, y + 60, { width: colW, align: 'center' });
+  const cx = x + colW + 12;
+  doc.rect(cx, y, colW, sigH).fillAndStroke(C.white, C.border);
+  doc.fillColor(C.brown).font('Helvetica-Bold').fontSize(9)
+     .text('Le client — bon pour accord', cx + 12, y + 12);
+  doc.fillColor(C.muted).font('Helvetica').fontSize(8)
+     .text('Nom, date et lieu :', cx + 12, y + 26);
+  doc.rect(cx + 12, y + sigH - 18, colW - 24, 0.5).fill(C.border);
+  doc.fillColor(C.muted).fontSize(7.5).text('Signature précédée de « Lu et approuvé »', cx + 12, y + sigH - 13, { width: colW - 24, align: 'center' });
 
-  return y + 80;
+  return y + sigH + 12;
 }
 
 // ── Devis ─────────────────────────────────────────────────────────────────────
