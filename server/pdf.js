@@ -9,19 +9,27 @@ if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const LOGO_PATH = path.join(__dirname, '..', 'public', 'logo.png');
 
-// ── Palette Beth Menahem ──────────────────────────────────────────────────────
+// ── Palette Beth Menahem (alignée site vitrine) ───────────────────────────────
 const C = {
-  navy:    '#1E3A5F',   // bleu marine profond
-  navyDk:  '#15283F',   // marine foncé
-  gold:    '#C9A84C',   // or signature
-  goldLt:  '#E8D08A',   // or clair
-  cream:   '#F8F4EE',   // crème très doux
-  creamMd: '#EDE8DF',   // crème moyen
-  dark:    '#1A202C',   // texte principal
-  grey:    '#718096',   // texte secondaire
-  lightLine:'#E8E0D0',  // séparateurs
-  green:   '#276749',   // total / montants
-  white:   '#FFFFFF',
+  dark:     '#221C14',   // fond sombre — même que site vitrine
+  darkMd:   '#2E2416',   // variante sombre
+  gold:     '#C9A84C',   // or signature
+  goldSite: '#B58B45',   // or site vitrine
+  goldLt:   '#E8D08A',   // or clair
+  cream:    '#F4EEE2',   // crème site vitrine
+  creamSoft:'#FAF7F2',   // crème très doux
+  brown:    '#2A2117',   // texte principal
+  warm:     '#6B5744',   // texte secondaire chaud
+  muted:    '#9A8878',   // texte tertiaire
+  border:   '#D8CFC2',   // séparateurs
+  green:    '#2D7A4F',   // montants positifs
+  white:    '#FDFAF5',   // blanc chaud
+  // Compat backward
+  navy:    '#221C14',
+  navyDk:  '#15100A',
+  grey:    '#9A8878',
+  lightLine:'#D8CFC2',
+  creamMd: '#EDE5D6',
 };
 
 // ── Logo / Monogramme ─────────────────────────────────────────────────────────

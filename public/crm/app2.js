@@ -59,19 +59,25 @@ Object.assign(Res, {
           <div class="nrf-body">
             <div class="form-grid">
               <div class="form-field"><label>Type d'événement</label><select id="f-event_type_id" onchange="Res.checkAvail();Res._updateSummary('evenement')">${opt(CONFIG.event_types,r.event_type_id)}</select></div>
-              <div class="form-field"><label>Date *</label><input type="date" id="f-date_evenement" value="" onchange="Res.checkAvail();Res._updateSummary('evenement')"></div>
+              <div class="nrf-date-field">
+                <div class="nrf-date-label">📅 Date de l'événement <span class="nrf-pick-req">*</span></div>
+                <div class="nrf-date-wrapper">
+                  <input type="date" id="f-date_evenement" value="" onchange="Res.checkAvail();Res._updateSummary('evenement')">
+                </div>
+                <div class="nrf-date-hint">Sélectionnez la date de votre événement</div>
+              </div>
               <div class="form-field"><label>Nombre de personnes</label><input type="number" id="f-nombre_personnes" min="0" value="" oninput="Res.recalc()"></div>
               <div class="form-field"><label>Adresse client</label><input id="f-adresse" value=""></div>
             </div>
             <div class="nrf-pick-group">
-              <div class="nrf-pick-label">🏛️ Salle / espace <span class="nrf-pick-req">*</span></div>
+              <div class="nrf-pick-label">🏛️ Salle / espace <span class="nrf-pick-req">*</span> <span class="nrf-pick-hint">Vous pouvez sélectionner plusieurs salles</span></div>
               <div class="nrf-pick-row" id="nrf-spaces">
                 ${CONFIG.spaces.map(s=>`<button type="button" class="nrf-pick-btn" data-val="${s.id}" data-group="space" style="--pick-color:${s.couleur||'#1E3A5F'}" onclick="Res._pickBtn(this,'space')">${UI.esc(s.nom)}</button>`).join('')}
               </div>
               <input type="hidden" id="f-space_id" value="">
             </div>
             <div class="nrf-pick-group">
-              <div class="nrf-pick-label">🕐 Plage horaire <span class="nrf-pick-req">*</span></div>
+              <div class="nrf-pick-label">🕐 Plage horaire <span class="nrf-pick-req">*</span> <span class="nrf-pick-hint">Vous pouvez sélectionner plusieurs plages</span></div>
               <div class="nrf-pick-row" id="nrf-slots">
                 ${CONFIG.time_slots.map(s=>`<button type="button" class="nrf-pick-btn nrf-pick-slot" data-val="${s.id}" data-group="slot" onclick="Res._pickBtn(this,'slot')"><strong>${UI.esc(s.nom)}</strong><span>${s.heure_debut||''} – ${s.heure_fin||''}</span></button>`).join('')}
               </div>
@@ -254,14 +260,16 @@ Object.assign(Res, {
     return null;
   },
 
-  // Sélection visuelle salle / plage horaire
+  // Sélection visuelle salle / plage horaire (multi-select)
   _pickBtn(btn, group){
-    const row = btn.closest('.nrf-pick-row');
-    row.querySelectorAll('.nrf-pick-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
+    btn.classList.toggle('active');
     const hiddenId = group==='space' ? 'f-space_id' : 'f-time_slot_id';
     const hidden = document.getElementById(hiddenId);
-    if(hidden) hidden.value = btn.dataset.val;
+    if(hidden){
+      const row = btn.closest('.nrf-pick-row');
+      const vals = [...row.querySelectorAll('.nrf-pick-btn.active')].map(b=>b.dataset.val);
+      hidden.value = vals.join(',');
+    }
     Res.checkAvail();
     Res._updateSummary('evenement');
   },
@@ -291,10 +299,11 @@ Object.assign(Res, {
       el.textContent=(n||p)?`${p} ${n}`.trim():'';
     } else if(section==='evenement'){
       const d=val('f-date_evenement');
-      const sp=CONFIG.spaces.find(s=>s.id==val('f-space_id'));
+      const spIds=(val('f-space_id')||'').split(',').filter(Boolean);
+      const spNames=spIds.map(id=>{const s=CONFIG.spaces.find(s=>s.id==id);return s?s.nom:'';}).filter(Boolean);
       const parts=[];
       if(d) parts.push(new Date(d).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}));
-      if(sp) parts.push(sp.nom);
+      if(spNames.length) parts.push(spNames.join(' + '));
       el.textContent=parts.join(' — ');
     } else if(section==='tarif'){
       const t=document.getElementById('rc-total');
@@ -329,22 +338,37 @@ Object.assign(Res, {
     this.recalc();
   },
   async autoPrice(){
-    if(!val('f-space_id')&&!val('f-event_type_id')){toast('💡 Sélectionnez une salle ou un type d\'événement pour calculer le prix automatiquement','info');return;}
-    try{const q=await api('POST','/quote',{space_id:+val('f-space_id')||null,event_type_id:+val('f-event_type_id')||null,time_slot_id:+val('f-time_slot_id')||null,date:val('f-date_evenement')});
+    const spIdFirst=+(val('f-space_id')||'').split(',')[0]||null;
+    const slotIdFirst=+(val('f-time_slot_id')||'').split(',')[0]||null;
+    if(!spIdFirst&&!val('f-event_type_id')){toast('💡 Sélectionnez une salle ou un type d\'événement pour calculer le prix automatiquement','info');return;}
+    try{const q=await api('POST','/quote',{space_id:spIdFirst,event_type_id:+val('f-event_type_id')||null,time_slot_id:slotIdFirst,date:val('f-date_evenement')});
     document.getElementById('f-prix_base').value=q.prix_base;
     toast(q.rule?`✅ Tarif appliqué : ${q.rule}`:'💡 Aucune règle tarifaire trouvée — saisissez le prix manuellement','info');this.recalc();}catch(e){toast('❌ '+e.message,'error');}
   },
   async checkAvail(){
-    const sp=val('f-space_id'),date=val('f-date_evenement'),slot=val('f-time_slot_id');
-    const box=document.getElementById('availBox');if(!sp||!date){box.innerHTML='';return;}
-    try{const a=await api('GET',`/availability?space_id=${sp}&date=${date}&time_slot_id=${slot}&exclude=${val('resId')||0}`);
-      box.innerHTML=a.available?'<div class="alert alert-ok">✅ Salle disponible à cette date.</div>':`<div class="alert alert-warn">⚠️ Conflit : <b>${a.conflit.reference}</b> — ${UI.esc(a.conflit.prenom)} ${UI.esc(a.conflit.nom)} (${a.conflit.slot_label||'—'}) occupe déjà cette salle ce jour-là.</div>`;
+    const spRaw=val('f-space_id'),date=val('f-date_evenement'),slot=val('f-time_slot_id');
+    const box=document.getElementById('availBox');if(!spRaw||!date){box.innerHTML='';return;}
+    // Vérifier chaque salle sélectionnée
+    const spIds=spRaw.split(',').filter(Boolean);
+    const slot1=(slot||'').split(',')[0]||'';
+    const exclude=val('resId')||0;
+    try{
+      const results=await Promise.all(spIds.map(sp=>api('GET',`/availability?space_id=${sp}&date=${date}&time_slot_id=${slot1}&exclude=${exclude}`)));
+      const conflicts=results.filter(a=>!a.available);
+      if(conflicts.length===0){
+        box.innerHTML=`<div class="alert alert-ok">✅ ${spIds.length>1?'Toutes les salles sont disponibles':'Salle disponible'} à cette date.</div>`;
+      } else {
+        box.innerHTML=conflicts.map(a=>`<div class="alert alert-warn">⚠️ Conflit : <b>${a.conflit.reference}</b> — ${UI.esc(a.conflit.prenom)} ${UI.esc(a.conflit.nom)} (${a.conflit.slot_label||'—'}) occupe déjà cette salle ce jour-là.</div>`).join('');
+      }
     }catch{}
     if(!val('f-prix_base')||numv('f-prix_base')===0) this.autoPrice();
   },
   gather(){
+    // Multi-sélection : on prend le premier ID pour la compatibilité backend
+    const spFirst=+(val('f-space_id')||'').split(',')[0]||null;
+    const slotFirst=+(val('f-time_slot_id')||'').split(',')[0]||null;
     const o={nom:val('f-nom'),prenom:val('f-prenom'),telephone:val('f-telephone'),email:val('f-email'),societe:val('f-societe'),adresse:val('f-adresse'),
-      event_type_id:+val('f-event_type_id')||null,space_id:+val('f-space_id')||null,time_slot_id:+val('f-time_slot_id')||null,
+      event_type_id:+val('f-event_type_id')||null,space_id:spFirst,time_slot_id:slotFirst,
       date_evenement:val('f-date_evenement'),nombre_personnes:+val('f-nombre_personnes')||0,source:val('f-source'),message_client:val('f-message_client'),
       prix_base:numv('f-prix_base'),remise_pct:numv('f-remise_pct'),remise_montant:numv('f-remise_montant'),remise_label:val('f-remise_label'),acompte_montant:numv('f-acompte_montant'),
       options:this.selectedOptions(),traiteur:val('f-traiteur'),decorateur:val('f-decorateur'),prestataires:val('f-prestataires'),logistique:val('f-logistique')};
