@@ -59,7 +59,7 @@ Object.assign(Res, {
           <div class="nrf-body">
             <div class="form-grid">
               <div class="form-field"><label>Type d'événement</label><select id="f-event_type_id" onchange="Res.checkAvail();Res._updateSummary('evenement')">${opt(CONFIG.event_types,r.event_type_id)}</select></div>
-              <div class="nrf-date-field">
+              <div class="nrf-date-field" style="grid-column:span 2">
                 <div class="nrf-date-label">📅 Date de l'événement <span class="nrf-pick-req">*</span></div>
                 <div class="nrf-date-wrapper">
                   <input type="date" id="f-date_evenement" value="" onchange="Res.checkAvail();Res._updateSummary('evenement')">

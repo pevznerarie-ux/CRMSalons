@@ -901,9 +901,9 @@ function goToSign() {
   const inp = document.getElementById('signature-input');
   const btn = document.getElementById('btn-sign');
   inp.placeholder = `${devis.prenom} ${devis.nom}`;
-  inp.addEventListener('input', () => {
+  inp.oninput = () => {
     btn.disabled = inp.value.trim().toLowerCase() !== expectedName;
-  });
+  };
 }
 
 // ── Soumettre la signature ───────────────────────────────────────
