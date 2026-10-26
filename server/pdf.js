@@ -7,6 +7,8 @@ const { fmtEur, fmtDate, getSetting, getSettings } = require('./lib');
 const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
+const LOGO_PATH = path.join(__dirname, '..', 'public', 'logo.png');
+
 // ── Palette Beth Menahem ──────────────────────────────────────────────────────
 const C = {
   navy:    '#1E3A5F',   // bleu marine profond
@@ -34,34 +36,39 @@ function drawMonogram(doc, x, y, size = 40) {
 function header(doc, org, titre, ref) {
   const W = doc.page.width;
   // Bande navy pleine hauteur
-  doc.rect(0, 0, W, 100).fill(C.navy);
+  doc.rect(0, 0, W, 110).fill(C.navy);
   // Trait or fin en bas de la bande
-  doc.rect(0, 97, W, 3).fill(C.gold);
+  doc.rect(0, 107, W, 3).fill(C.gold);
 
-  // Monogramme
-  drawMonogram(doc, 38, 26, 48);
+  // Logo à gauche — fond blanc derrière car PNG sur fond blanc
+  const logoW = 170, logoH = 65;
+  const logoX = 28, logoY = 22;
+  if (fs.existsSync(LOGO_PATH)) {
+    // Fond blanc arrondi pour isoler le logo sur la bande navy
+    doc.roundedRect(logoX - 6, logoY - 4, logoW + 12, logoH + 8, 4).fill(C.white);
+    doc.image(LOGO_PATH, logoX, logoY, { width: logoW, height: logoH, fit: [logoW, logoH] });
+  } else {
+    // Fallback monogramme
+    drawMonogram(doc, 38, 30, 48);
+    const nom = org.org_nom || "Salons d'Honneur Beth Menahem";
+    doc.fillColor(C.gold).fontSize(11).font('Helvetica-Bold').text(nom, 98, 34, { width: W - 240 });
+  }
 
-  // Nom de l'établissement — zone strictement délimitée entre monogramme et bloc titre
-  const nomX = 98, nomW = W - 98 - 140; // laisser 140px pour le titre à droite
-  const nom = org.org_nom || "Salons d'Honneur Beth Menahem";
-  doc.fillColor(C.gold).fontSize(13).font('Helvetica-Bold')
-     .text(nom, nomX, 30, { width: nomW, lineGap: 1 });
-
-  // Coordonnées en blanc petit — juste après le nom
+  // Coordonnées sous le logo
   const coord = [org.org_adresse, org.org_telephone, org.org_email].filter(Boolean).join('  ·  ');
-  doc.fillColor(C.goldLt).fontSize(8).font('Helvetica')
-     .text(coord || '', nomX, 66, { width: nomW });
+  doc.fillColor(C.goldLt).fontSize(7.5).font('Helvetica')
+     .text(coord || '', logoX, logoY + logoH + 2, { width: logoW + 60 });
 
-  // Titre du document (côté droit) — aligné à droite, zone fixe
-  const titreX = W - 130;
-  doc.fillColor(C.white).fontSize(13).font('Helvetica-Bold')
-     .text(titre, titreX, 28, { width: 100, align: 'right' });
+  // Titre du document (côté droit) — aligné à droite
+  const titreX = W - 140;
+  doc.fillColor(C.white).fontSize(14).font('Helvetica-Bold')
+     .text(titre, titreX, 30, { width: 110, align: 'right' });
   doc.fillColor(C.goldLt).fontSize(8.5).font('Helvetica')
-     .text(`Réf. ${ref}`, titreX, 50, { width: 100, align: 'right' });
+     .text(`Réf. ${ref}`, titreX, 54, { width: 110, align: 'right' });
   doc.fillColor(C.goldLt).fontSize(8.5)
-     .text(new Date().toLocaleDateString('fr-FR'), titreX, 63, { width: 100, align: 'right' });
+     .text(new Date().toLocaleDateString('fr-FR'), titreX, 67, { width: 110, align: 'right' });
 
-  return 120;
+  return 128;
 }
 
 // ── Bloc client ───────────────────────────────────────────────────────────────
