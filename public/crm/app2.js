@@ -106,9 +106,27 @@ Object.assign(Res, {
         }
         document.querySelectorAll('.res-tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');
         document.querySelectorAll('#resModalBody .tab-pane').forEach(p=>p.classList.toggle('active',p.dataset.pane===t.dataset.tab));
+        // Auto-tarification quand on arrive sur l'onglet Tarif (nouvelle réservation)
+        if(t.dataset.tab==='tarif' && !r.id && numv('f-prix_base')===0){
+          const sp=document.getElementById('f-space_id')?.value;
+          const dt=document.getElementById('f-date_evenement')?.value;
+          if(sp&&dt) Res.autoPrice();
+        }
       };
     });
     document.querySelector('.res-tab[data-tab=client]').click();
+
+    // Indicateur de progression pour nouvelle réservation
+    if(!r.id){
+      const tabBar = document.querySelector('.res-tabs');
+      if(tabBar && !document.getElementById('newResHint')){
+        const hint = document.createElement('div');
+        hint.id = 'newResHint';
+        hint.style.cssText = 'padding:8px 16px;background:var(--accent-bg);border-bottom:1px solid var(--border);font-size:12px;color:var(--accent);display:flex;align-items:center;gap:8px';
+        hint.innerHTML = '✨ <strong>Nouvelle demande</strong> — Remplissez <b>Client</b> puis <b>Tarif</b>, puis cliquez sur Enregistrer';
+        tabBar.parentNode.insertBefore(hint, tabBar);
+      }
+    }
 
     // commercial select (admin)
     if(ME.role==='admin'){ getUsers().then(us=>{ const w=document.getElementById('commercialWrap'); if(w) w.innerHTML=`<label>Commercial assigné</label><select id="f-commercial_id"><option value="">—</option>${us.filter(u=>['admin','commercial'].includes(u.role)).map(u=>`<option value="${u.id}" ${r.commercial_id==u.id?'selected':''}>${UI.esc(u.nom||u.email)}</option>`).join('')}</select>`; }); }
@@ -190,25 +208,62 @@ Object.assign(Res, {
         await api('PUT','/reservations/'+id,data);
         if(can('commercial','administratif') && this.current && statut!==this.current.statut) await api('POST',`/reservations/${id}/statut`,{statut});
         toast('✅ Réservation enregistrée');
+        UI.closeModal('modalReservation');Res.load();Dash.load();if(Cal.inst)Cal.render();
       }else{
         const errors=this.validateForm(data);
         const blocking=errors.filter(e=>!e.startsWith('⚠️'));
         if(blocking.length){
-          // Scroll vers le premier champ en erreur
-          const firstErr=document.querySelector('.field-error');if(firstErr){document.querySelector('.res-tab[data-tab=client]').click();setTimeout(()=>firstErr.scrollIntoView({behavior:'smooth',block:'center'}),50);}
+          const firstErr=document.querySelector('.field-error');
+          if(firstErr){document.querySelector('.res-tab[data-tab=client]').click();setTimeout(()=>firstErr.scrollIntoView({behavior:'smooth',block:'center'}),50);}
           toast('❌ '+blocking[0],'error');return;
         }
-        if(errors.length){// Avertissements non bloquants
-          const warn=errors.join(' · ');
-          // On continue mais on affiche un toast d'info
-          toast('💡 '+warn,'info');
+        // Bloquer si prix = 0 (sauf cas vraiment gratuit = confirmation explicite)
+        if(numv('f-prix_base')===0 && !data.options?.length){
+          const tabTarif=document.querySelector('.res-tab[data-tab=tarif]');if(tabTarif)tabTarif.click();
+          toast('⚠️ Le prix de base est à 0 €. Vérifiez la tarification avant d\'enregistrer.','error');
+          return;
         }
+        // Résumé de confirmation avant création
+        await Res._confirmAndCreate(data, statut, errors);
+      }
+    }catch(e){toast('❌ '+e.message,'error');}
+  },
+
+  async _confirmAndCreate(data, statut, warnings){
+    // Calcul total pour l'affichage
+    const rcTotal = document.getElementById('rc-total');
+    const totalStr = rcTotal ? rcTotal.textContent : (data.prix_base>0?fmtEur(data.prix_base):'—');
+    const spaceName = CONFIG.spaces.find(s=>s.id===data.space_id)?.nom || '—';
+    const evtName = CONFIG.event_types.find(e=>e.id===data.event_type_id)?.nom || '—';
+    const g = document.getElementById('genBody');
+    g.innerHTML = `
+      <div style="font-size:13px;color:var(--text-3);margin-bottom:12px">Vérifiez les informations avant de créer la réservation :</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="recap-row"><span>👤 Client</span><strong>${UI.esc(data.prenom)} ${UI.esc(data.nom)}</strong></div>
+        <div class="recap-row"><span>📞 Téléphone</span><span>${UI.esc(data.telephone)||'—'}</span></div>
+        <div class="recap-row"><span>📅 Date</span><strong>${data.date_evenement?new Date(data.date_evenement).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):'—'}</strong></div>
+        <div class="recap-row"><span>🏛️ Salle</span><span>${UI.esc(spaceName)}</span></div>
+        <div class="recap-row"><span>🎊 Événement</span><span>${UI.esc(evtName)}</span></div>
+        ${data.nombre_personnes>0?`<div class="recap-row"><span>👥 Invités</span><span>${data.nombre_personnes} personnes</span></div>`:''}
+        <div class="recap-row recap-total"><span>💰 Total</span><strong style="font-size:18px;color:var(--accent)">${totalStr}</strong></div>
+      </div>
+      ${warnings.length?`<div class="alert alert-warn" style="margin-top:12px;font-size:12px">${warnings.join('<br>')}</div>`:''}
+    `;
+    document.getElementById('genTitle').textContent = '📋 Récapitulatif';
+    document.getElementById('genFoot').innerHTML = `
+      <button class="btn btn-ghost" onclick="UI.closeModal('modalGeneric')">Corriger</button>
+      <button class="btn btn-navy" id="genConfirmCreate">✅ Confirmer et créer</button>
+    `;
+    document.getElementById('genConfirmCreate').onclick = async()=>{
+      UI.closeModal('modalGeneric');
+      try{
         const res=await api('POST','/reservations',data);
         if(statut!=='demande') await api('POST',`/reservations/${res.id}/statut`,{statut});
         toast('✅ Réservation créée — '+res.reference);
-      }
-      UI.closeModal('modalReservation');Res.load();Dash.load();if(Cal.inst)Cal.render();
-    }catch(e){toast('❌ '+e.message,'error');}
+        UI.closeModal('modalReservation');Res.load();Dash.load();if(Cal.inst)Cal.render();
+      }catch(e){toast('❌ '+e.message,'error');}
+    };
+    UI.openModal('modalGeneric');
   },
   async generateDoc(type){try{await api('POST',`/reservations/${val('resId')}/documents/generate`,{type});toast('✅ '+(type==='contrat'?'Contrat':'Devis')+' généré');const r=await api('GET','/reservations/'+val('resId'));this.renderDocs(r);}catch(e){toast('❌ '+e.message,'error');}},
   async sendDevis(){try{await api('POST',`/reservations/${val('resId')}/send-devis`);toast('✅ Devis envoyé au client');}catch(e){toast('❌ '+e.message,'error');}},

@@ -787,3 +787,33 @@ td { padding: 12px 16px; font-size: 13.5px; vertical-align: middle; }
 
 /* ─── UTILITAIRES ─────────────────────────────────────────────────────── */
 .hidden { display: none !important; }
+
+/* ─── RÉCAPITULATIF NOUVELLE RÉSERVATION ──────────────────────────────── */
+.recap-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  font-size: 13px;
+}
+.recap-row span:first-child {
+  color: var(--text-3);
+  font-size: 12px;
+}
+.recap-total {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  margin-top: 4px;
+}
+
+/* ─── HINT NOUVELLE RÉSERVATION ───────────────────────────────────────── */
+#newResHint {
+  animation: fadeSlideIn .3s ease;
+}
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
